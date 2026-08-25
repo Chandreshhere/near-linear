@@ -634,9 +634,16 @@ const ViewRow = observer(function ViewRow({
 export const ViewsPage = observer(function ViewsPage({
   workspace,
   tab,
+  teamKey,
 }: {
   workspace: string;
   tab: ViewsTab;
+  /**
+   * Team scope (`/:ws/team/:KEY/views/issues`). Present = list only the views
+   * saved against that team and pre-select it in the create dialog; absent =
+   * the workspace-wide page, which lists everything.
+   */
+  teamKey?: string;
 }) {
   const store = useStore();
   const views = useCustomViews();
@@ -655,10 +662,15 @@ export const ViewsPage = observer(function ViewsPage({
   const rows = React.useMemo(
     () =>
       views
-        .filter((view) => view.type === tab)
+        .filter(
+          (view) =>
+            view.type === tab &&
+            (teamKey === undefined ||
+              view.teamKey?.toUpperCase() === teamKey.toUpperCase()),
+        )
         .slice()
         .sort((a, b) => a.name.localeCompare(b.name)),
-    [views, tab],
+    [views, tab, teamKey],
   );
 
   const saveCurrentView = React.useCallback(
@@ -699,6 +711,8 @@ export const ViewsPage = observer(function ViewsPage({
           </Button>
         }
         tabs={
+          // A team has one views route, so its page carries no tab strip.
+          teamKey !== undefined ? undefined : (
           <div className={shellStyles.tabStrip}>
             {VIEW_TABS.map(({ id, label }) => (
               <Link
@@ -711,6 +725,7 @@ export const ViewsPage = observer(function ViewsPage({
               </Link>
             ))}
           </div>
+          )
         }
       />
 
@@ -779,7 +794,12 @@ export const ViewsPage = observer(function ViewsPage({
         )}
       </div>
 
-      <NewViewDialog open={dialogOpen} onOpenChange={setDialogOpen} type={tab} />
+      <NewViewDialog
+        open={dialogOpen}
+        onOpenChange={setDialogOpen}
+        type={tab}
+        defaultTeamKey={teamKey}
+      />
       <DocumentationDialog open={docsOpen} onOpenChange={setDocsOpen} />
 
       <React.Suspense fallback={null}>

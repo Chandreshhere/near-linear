@@ -9,12 +9,13 @@ import { openCreateIssue } from "@/components/issues/CreateIssueModal";
 import { HelpMenu } from "@/components/nav/HelpMenu";
 import { JoinTeamMenu } from "@/components/nav/JoinTeamMenu";
 import { SidebarMoreMenu } from "@/components/nav/MoreMenu";
+import { openCreateTeamDialog } from "@/components/teams/CreateTeamDialog";
 import { WorkspaceMenu } from "@/components/nav/WorkspaceMenu";
 import { openInviteDialog } from "@/components/members/InvitePeopleDialog";
 import { useHiddenSidebarItems } from "@/components/settings/sidebarConfig";
-import { SyncStatus, useStore } from "@/lib/data/DataProvider";
+import { SyncStatus, useSyncClient } from "@/lib/data/DataProvider";
 import { CURRENT_USER_ID } from "@/lib/issues/viewPrefs";
-import { TEAMS, WORKSPACE } from "@/lib/seed";
+import { workspaceDisplay } from "@/lib/workspace/active";
 import { isTriageSnoozed } from "@/lib/triage/snooze";
 import { isTeamMember } from "@/lib/workspace/teams";
 import styles from "./sidebar.module.css";
@@ -32,16 +33,14 @@ function persistSidebarWidth(w: number) {
   } catch {}
 }
 
-/** One team row of the sidebar list (store row, or the pre-boot seed shape). */
+/** One team row of the sidebar list. */
 interface SidebarTeam {
   id: string;
   key: string;
   name: string;
   icon: string;
   color: string;
-  /** §22 per-team enables — the Cycles / Triage children are gated on them.
-      The pre-boot seed shape knows neither, so both default to off until the
-      real rows land in the pool. */
+  /** §22 per-team enables — the Cycles / Triage children are gated on them. */
   cyclesEnabled: boolean;
   triageEnabled: boolean;
 }
@@ -52,44 +51,50 @@ export const Sidebar = observer(function Sidebar({
   workspace: string;
 }) {
   const pathname = usePathname();
-  const store = useStore();
+  const client = useSyncClient();
+  const store = client.store;
+  const ready = client.status !== "booting";
   const [resizing, setResizing] = useState(false);
   const [workspaceOpen, setWorkspaceOpen] = useState(true);
   const [teamsOpen, setTeamsOpen] = useState(true);
   const [tryOpen, setTryOpen] = useState(true);
-  const [expandedTeams, setExpandedTeams] = useState<Set<string>>(
-    () => new Set(["t-trendzo"])
-  );
+  /** Explicit user toggles only; the default is computed per team below. */
+  const [teamToggles, setTeamToggles] = useState<Record<string, boolean>>({});
   const panelRef = useRef<HTMLDivElement>(null);
   /* Settings → Preferences → App sidebar → Customize (§10.9). */
   const hidden = useHiddenSidebarItems();
 
   /*
-   * Store-driven: a team created from the + menu (or in another tab) shows up
-   * here the moment its row lands in the pool. The seed list is only the
-   * pre-bootstrap fallback, so the first paint is never empty.
+   * Store-driven, and ONLY store-driven: a team created from the + menu (or in
+   * another tab) shows up the moment its row lands in the pool, and a browser
+   * whose workspace has one team shows exactly one team. There is deliberately
+   * no fixture fallback here — that is what used to show every user the same
+   * seven invented teams before hydration.
    */
-  const storeTeams = store.all("Team");
-  const teams: SidebarTeam[] =
-    storeTeams.length > 0
-      ? storeTeams
-          .filter((team) => isTeamMember(team, CURRENT_USER_ID))
-          .slice()
-          .sort((a, b) => a.sortOrder - b.sortOrder)
-          .map((team) => ({
-            id: team.id,
-            key: team.key,
-            name: team.name,
-            icon: team.icon,
-            color: team.color,
-            cyclesEnabled: team.cyclesEnabled,
-            triageEnabled: team.triageEnabled,
-          }))
-      : TEAMS.map((team) => ({
-          ...team,
-          cyclesEnabled: false,
-          triageEnabled: false,
-        }));
+  const teams: SidebarTeam[] = store
+    .all("Team")
+    .filter((team) => isTeamMember(team, CURRENT_USER_ID))
+    .slice()
+    .sort((a, b) => a.sortOrder - b.sortOrder)
+    .map((team) => ({
+      id: team.id,
+      key: team.key,
+      name: team.name,
+      icon: team.icon,
+      color: team.color,
+      cyclesEnabled: team.cyclesEnabled,
+      triageEnabled: team.triageEnabled,
+    }));
+
+  /*
+   * Workspace identity: the row once the pool has it, otherwise a name derived
+   * from the slug in the URL. Both agree ("acme-labs" → "Acme Labs"), so the
+   * name never changes under the user and SSR and hydration match.
+   */
+  const identity = workspaceDisplay(
+    workspace,
+    store.all("Workspace")[0]?.name,
+  );
 
   const ws = `/${workspace}`;
   const isActive = (href: string) =>
@@ -136,13 +141,21 @@ export const Sidebar = observer(function Sidebar({
     window.addEventListener("pointerup", onUp);
   }, []);
 
-  const toggleTeam = (id: string) =>
-    setExpandedTeams((prev) => {
-      const next = new Set(prev);
-      if (next.has(id)) next.delete(id);
-      else next.add(id);
-      return next;
-    });
+  /**
+   * Default: the team you are looking at is open, otherwise the first one.
+   * (This used to be a hardcoded fixture id, so any workspace whose team was
+   * not "t-trendzo" rendered every team collapsed.)
+   */
+  const isTeamExpanded = (team: SidebarTeam, index: number): boolean =>
+    teamToggles[team.id] ??
+    (isActive(`${ws}/team/${team.key}`) ||
+      (index === 0 && !teams.some((t) => isActive(`${ws}/team/${t.key}`))));
+
+  const toggleTeam = (team: SidebarTeam, index: number) =>
+    setTeamToggles((prev) => ({
+      ...prev,
+      [team.id]: !isTeamExpanded(team, index),
+    }));
 
   return (
     <>
@@ -155,17 +168,17 @@ export const Sidebar = observer(function Sidebar({
                 <button
                   type="button"
                   className={styles.workspaceBtn}
-                  aria-label={`${WORKSPACE.name} Workspace Menu`}
+                  aria-label={`${identity.name} Workspace Menu`}
                   aria-haspopup="menu"
                   aria-expanded="false"
                 >
                   <span
                     className={styles.workspaceAvatar}
-                    style={{ background: WORKSPACE.avatarColor }}
+                    style={{ background: identity.avatarColor }}
                   >
-                    {WORKSPACE.initials}
+                    {identity.initials}
                   </span>
-                  <span className={styles.workspaceName}>{WORKSPACE.name}</span>
+                  <span className={styles.workspaceName}>{identity.name}</span>
                   <Icon name="WorkspaceChevron" size={8} />
                 </button>
               }
@@ -338,8 +351,8 @@ export const Sidebar = observer(function Sidebar({
                 aria-hidden={!teamsOpen}
               >
                 <ul>
-                  {teams.map((team) => {
-                    const expanded = expandedTeams.has(team.id);
+                  {teams.map((team, index) => {
+                    const expanded = isTeamExpanded(team, index);
                     return (
                       <li key={team.id}>
                         <button
@@ -347,7 +360,7 @@ export const Sidebar = observer(function Sidebar({
                           className={styles.teamRow}
                           aria-expanded={expanded}
                           aria-controls={`team-${team.id}`}
-                          onClick={() => toggleTeam(team.id)}
+                          onClick={() => toggleTeam(team, index)}
                           title={team.name}
                         >
                           <span className={styles.teamIcon}>
@@ -384,6 +397,20 @@ export const Sidebar = observer(function Sidebar({
                     );
                   })}
                 </ul>
+                {/* Belonging to no team is a real (if rare) state — booting,
+                    or every team left. Never a dead end. */}
+                {teams.length === 0 && ready ? (
+                  <button
+                    type="button"
+                    className={styles.link}
+                    onClick={() => openCreateTeamDialog()}
+                  >
+                    <span className={styles.linkIcon}>
+                      <Icon name="Plus" size={14} />
+                    </span>
+                    Create a team
+                  </button>
+                ) : null}
               </div>
             </div>
 

@@ -42,6 +42,7 @@ import { useViewPreference } from "@/lib/issues/viewPrefs";
 import { getSelectionStore } from "@/lib/issues/selection";
 import { withoutTriageStates } from "@/lib/issues/triage";
 import { useActivePeekSource } from "@/components/nav/Peek";
+import { EmptyState } from "@/components/ui/EmptyState";
 import type { UUID } from "@/lib/data/types";
 import { BoardColumn } from "./Column";
 import { BoardCardPreview } from "./Card";
@@ -99,7 +100,14 @@ export const Board = observer(function Board({
     useSensor(PointerSensor, { activationConstraint: { distance: 4 } }),
   );
 
-  const showEmpty = pref.showEmptyGroups;
+  /*
+   * "Show empty columns" is off by default, which on a board with NO issues at
+   * all hid every column and left a blank pane. A board is its columns: with
+   * nothing filed yet, show them all — each carries its own "Add issue to …"
+   * affordance, which IS the empty state's primary action.
+   */
+  const boardHasIssues = store.issuesForTeam(teamId).length > 0;
+  const showEmpty = pref.showEmptyGroups || !boardHasIssues;
   // Enabled display-property keys (§11.1) — cards render their chip row and
   // "Created …" footer from this list (§15: cards show enabled display props).
   const displayProperties = pref.displayProperties;
@@ -242,6 +250,19 @@ export const Board = observer(function Board({
   const handlePointerDownCapture = (): void => {
     suppressClickRef.current = false;
   };
+
+  // A team with no workflow statuses has no board to draw. Every team created
+  // through the app gets six, so this is the "someone deleted them all" case.
+  if (columns.length === 0) {
+    return (
+      <div className={styles.boardEmpty}>
+        <EmptyState heading="This team has no statuses">
+          A board is made of the team&rsquo;s workflow statuses. Add some in
+          Settings &rarr; Teams to start dragging work across it.
+        </EmptyState>
+      </div>
+    );
+  }
 
   return (
     <div

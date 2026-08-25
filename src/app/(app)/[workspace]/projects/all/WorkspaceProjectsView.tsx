@@ -107,7 +107,10 @@ export function WorkspaceProjectsView() {
       <div className={styles.body}>
         <div className={styles.viewport} tabIndex={0} data-scroll-container="true">
           <Suspense fallback={null}>
-            <ProjectsTable viewKey={VIEW_KEY} />
+            <ProjectsTable
+              viewKey={VIEW_KEY}
+              onCreateProject={() => setNewProjectOpen(true)}
+            />
           </Suspense>
         </div>
       </div>

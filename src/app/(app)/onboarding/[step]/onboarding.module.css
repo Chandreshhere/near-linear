@@ -204,6 +204,81 @@
   color: var(--color-text-muted);
 }
 
+/* ---------- workspace step (§17.2) ---------- */
+
+.urlRow {
+  display: flex;
+  align-items: center;
+  gap: 0;
+  min-width: 0;
+}
+
+.urlPrefix {
+  flex: none;
+  padding: 0 8px 0 10px;
+  font-size: var(--font-size-small);
+  font-weight: var(--font-weight-normal);
+  color: var(--color-text-muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 45%;
+}
+
+.urlInput.urlInput {
+  flex-grow: 1;
+  min-width: 0;
+}
+
+.hint {
+  font-size: var(--font-size-mini);
+  font-weight: var(--font-weight-normal);
+  line-height: 17px;
+  color: var(--color-text-muted);
+}
+
+.hint code {
+  font-family: var(--font-monospace);
+  color: var(--color-text-base);
+}
+
+.error {
+  font-size: var(--font-size-mini);
+  font-weight: var(--font-weight-normal);
+  line-height: 17px;
+  color: var(--color-red-text);
+}
+
+/* What creating the workspace actually does — stated, not implied. */
+.summary {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 12px 14px;
+  border-radius: var(--radius-row);
+  background: var(--color-bg-sub);
+  font-size: var(--font-size-mini);
+  font-weight: var(--font-weight-normal);
+  line-height: 17px;
+  color: var(--color-text-muted);
+}
+
+.summaryRow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.chip {
+  flex: none;
+  padding: 1px 6px;
+  border-radius: 4px;
+  background: var(--color-bg-shade);
+  color: var(--color-text-base);
+  font-family: var(--font-monospace);
+  font-size: var(--font-size-micro);
+}
+
 /* ---------- action row (§6c) ---------- */
 
 .actions {

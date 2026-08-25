@@ -38,12 +38,17 @@ interface ExampleCard {
   prompt: string;
 }
 
-const EXAMPLES: ExampleCard[] = [
+/**
+ * The first card names a REAL team of this workspace, so clicking it produces
+ * a prompt the agent can actually execute. (It used to name a fixture team,
+ * which in any workspace but the demo one was an instruction to nowhere.)
+ */
+const examplesFor = (teamKey: string): ExampleCard[] => [
   {
     icon: <Icon name="Project" size={16} />,
     title: "Create a new project",
     subtitle: "Turn an idea into a well-scoped project",
-    prompt: 'Create a project called "Driver App v2" for TRENDZO',
+    prompt: `Create a project called "Mobile App v2" for ${teamKey}`,
   },
   {
     icon: <GlyphResearch size={16} />,
@@ -79,6 +84,15 @@ export const AgentView = observer(function AgentView({
   const working = chat?.status === "working";
   const messageCount = chat?.messages.length ?? 0;
   const streamedLength = chat?.messages[messageCount - 1]?.text.length ?? 0;
+
+  const firstTeamKey = client.store
+    .all("Team")
+    .slice()
+    .sort((a, b) => a.sortOrder - b.sortOrder)[0]?.key;
+  const examples = useMemo(
+    () => examplesFor(firstTeamKey ?? "your team"),
+    [firstTeamKey],
+  );
 
   /* SSR-safe: the dismissal flag is only read in the browser. */
   useEffect(() => {
@@ -189,7 +203,7 @@ export const AgentView = observer(function AgentView({
                 </button>
               </div>
               <div className={styles.examplesCards}>
-                {EXAMPLES.map((example) => (
+                {examples.map((example) => (
                   <button
                     key={example.title}
                     type="button"

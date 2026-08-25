@@ -8,6 +8,7 @@ import { ShortcutsDialogHost } from "@/components/nav/ShortcutsDialog";
 import { TeamGotoShortcuts } from "@/components/nav/TeamGotoShortcuts";
 import { SettingsEffects } from "@/components/settings/SettingsEffects";
 import { TooltipProvider } from "@/components/ui/Tooltip";
+import { WorkspaceGuard } from "@/components/shell/WorkspaceGuard";
 import { CreateTeamDialogHost } from "@/components/teams/CreateTeamDialog";
 import { DataProvider } from "@/lib/data/DataProvider";
 
@@ -28,6 +29,9 @@ export default async function WorkspaceLayout({
       {/* Projects the UserSettings row onto <html> (theme, font size,
           cursor policy, link underlines) app-wide, not just in Settings. */}
       <SettingsEffects />
+      {/* A slug with no workspace behind it (stale bookmark, wiped browser)
+          goes to onboarding rather than rendering an empty shell. */}
+      <WorkspaceGuard workspace={workspace} />
       <AppShell workspace={workspace}>{children}</AppShell>
       <CreateIssueHost />
       <CommandPaletteHost />

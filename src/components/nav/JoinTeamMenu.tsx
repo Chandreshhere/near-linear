@@ -23,19 +23,20 @@ import { openCreateTeamDialog } from "@/components/teams/CreateTeamDialog";
 import { useSyncClient } from "@/lib/data/DataProvider";
 import { CURRENT_USER_ID } from "@/lib/issues/viewPrefs";
 import { showToast } from "@/lib/toast";
-import { WORKSPACE } from "@/lib/seed";
+import { workspaceDisplay } from "@/lib/workspace/active";
 import { isTeamMember, setTeamMembership } from "@/lib/workspace/teams";
 import styles from "./jointeam.module.css";
 
 /** 16px rounded workspace tile — the avatar idiom of the sidebar top row. */
-function WorkspaceTile(): JSX.Element {
+function WorkspaceTile({ slug, name }: { slug: string; name?: string }): JSX.Element {
+  const identity = workspaceDisplay(slug, name);
   return (
     <span
       className={styles.tile}
-      style={{ background: WORKSPACE.avatarColor }}
+      style={{ background: identity.avatarColor }}
       aria-hidden="true"
     >
-      {WORKSPACE.initials}
+      {identity.initials}
     </span>
   );
 }
@@ -49,6 +50,7 @@ export const JoinTeamMenu = observer(function JoinTeamMenu({
 }): JSX.Element {
   const client = useSyncClient();
   const router = useRouter();
+  const workspaceName = client.store.all("Workspace")[0]?.name;
 
   const joinable = client.store
     .all("Team")
@@ -67,7 +69,7 @@ export const JoinTeamMenu = observer(function JoinTeamMenu({
     for (const team of joinable) {
       items.push({
         label: team.name,
-        icon: <WorkspaceTile />,
+        icon: <WorkspaceTile slug={workspace} name={workspaceName} />,
         onSelect: () => {
           setTeamMembership(client, team, CURRENT_USER_ID, true);
           showToast(`Joined ${team.name}`);

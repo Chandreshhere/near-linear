@@ -206,7 +206,7 @@ function teamsBySortOrder(store: SyncStore): TeamData[] {
   return store.all("Team").slice().sort((a, b) => a.sortOrder - b.sortOrder);
 }
 
-/** Team from "in TRENDZO", "for the Trendzo team", or a bare team name/key. */
+/** Team from "in ENG", "for the Design team", or a bare team name/key. */
 function findTeam(store: SyncStore, text: string): TeamData | undefined {
   const lower = text.toLowerCase();
   const teams = teamsBySortOrder(store);
@@ -660,8 +660,11 @@ export class LocalAgentAdapter implements AgentAdapter {
     const store = this.store;
     const name = extractTitle(text);
     if (name === undefined) {
+      // Name a team that actually exists — an example pointing at a team the
+      // workspace does not have is worse than no example.
+      const hint = teamsBySortOrder(store)[0]?.key;
       return {
-        text: 'I need a name to create a project. Try: `create a project called "Driver App v2" for TRENDZO`.',
+        text: `I need a name to create a project. Try: \`create a project called "Mobile App v2"${hint === undefined ? "" : ` for ${hint}`}\`.`,
         actions: [],
       };
     }
@@ -944,7 +947,9 @@ export class LocalAgentAdapter implements AgentAdapter {
 
   private helpText(unmatched?: string, prefs?: AgentPersonalization): string {
     const store = this.store;
-    const team = teamsBySortOrder(store)[0]?.key ?? "TRENDZO";
+    // A brand-new workspace always has one team; "TEAM" is only ever a
+    // placeholder for the moment before the pool has hydrated.
+    const team = teamsBySortOrder(store)[0]?.key ?? "TEAM";
     const lead = unmatched
       ? `I couldn't turn that into an action or a question I can answer.\n\n`
       : "";
@@ -955,6 +960,6 @@ export class LocalAgentAdapter implements AgentAdapter {
       standing === ""
         ? ""
         : `\n\n**Your standing instructions**\n> ${standing.replace(/\n+/g, "\n> ")}`;
-    return `${lead}Here's what I can do right now, all against your live workspace:\n\n**Make changes**\n- \`create an issue titled "Fix retry loop" in ${team} with high priority assign me\`\n- \`set ${team}-1 to In Progress\` · \`assign ${team}-1 to me\` · \`set priority of ${team}-1 to urgent\` · \`rename ${team}-1 to "New title"\`\n- \`create a project called "Driver App v2" for ${team}\`\n- \`add a milestone "Beta" to project Driver App\`\n\n**Answer questions**\n- \`what's in progress?\` · \`summarize the backlog\` · \`what's assigned to me?\` · \`list projects\` · \`status of ${team}\`\n\nEverything I change goes through the same optimistic pipeline the UI uses, so you'll see it in the lists immediately.${tail}`;
+    return `${lead}Here's what I can do right now, all against your live workspace:\n\n**Make changes**\n- \`create an issue titled "Fix retry loop" in ${team} with high priority assign me\`\n- \`set ${team}-1 to In Progress\` · \`assign ${team}-1 to me\` · \`set priority of ${team}-1 to urgent\` · \`rename ${team}-1 to "New title"\`\n- \`create a project called "Mobile App v2" for ${team}\`\n- \`add a milestone "Beta" to project Mobile App v2\`\n\n**Answer questions**\n- \`what's in progress?\` · \`summarize the backlog\` · \`what's assigned to me?\` · \`list projects\` · \`status of ${team}\`\n\nEverything I change goes through the same optimistic pipeline the UI uses, so you'll see it in the lists immediately.${tail}`;
   }
 }

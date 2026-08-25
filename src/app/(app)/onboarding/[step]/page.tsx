@@ -3,7 +3,7 @@ import { redirect } from "next/navigation";
 import { OnboardingView } from "./OnboardingView";
 import { isOnboardingStep } from "./steps";
 
-export const metadata: Metadata = { title: "Set up your profile" };
+export const metadata: Metadata = { title: "Get started" };
 
 export default async function OnboardingStepPage({
   params,
@@ -11,6 +11,6 @@ export default async function OnboardingStepPage({
   params: Promise<{ step: string }>;
 }) {
   const { step } = await params;
-  if (!isOnboardingStep(step)) redirect("/onboarding/profile");
+  if (!isOnboardingStep(step)) redirect("/onboarding/workspace");
   return <OnboardingView step={step} />;
 }

@@ -37,7 +37,11 @@ import { useStore, useSyncClient } from "@/lib/data/DataProvider";
 import { clearSession } from "@/lib/auth/session";
 import { formatKeys, useShortcut } from "@/lib/keyboard";
 import { showToast } from "@/lib/toast";
-import { USERS, WORKSPACE } from "@/lib/seed";
+import {
+  useKnownWorkspaces,
+  workspaceDisplay,
+  writeActiveWorkspace,
+} from "@/lib/workspace/active";
 import styles from "./workspacemenu.module.css";
 
 const SWITCH_KEYS = "o w";
@@ -117,10 +121,24 @@ export const WorkspaceMenu = observer(function WorkspaceMenu({
     handler: () => setOpen(true),
   });
 
-  // Store first, seed fixtures as the pre-bootstrap fallback.
-  const workspaceName = store.all("Workspace")[0]?.name ?? WORKSPACE.name;
-  const accountEmail = store.get("User", CURRENT_USER_ID)?.email ?? USERS[0].name;
+  /*
+   * The switcher lists the workspaces THIS BROWSER actually has (each one a
+   * real IndexedDB database it created), never an invented set. The current
+   * one is always in the list even if the local index was cleared.
+   */
+  const known = useKnownWorkspaces();
+  const storedName = store.all("Workspace")[0]?.name;
+  const identity = workspaceDisplay(workspace, storedName);
+  const others = known.filter((w) => w.slug !== workspace);
+  const accountEmail = store.get("User", CURRENT_USER_ID)?.email ?? "";
   const settingsHref = `/${workspace}/settings/account/preferences`;
+
+  /** Switching is a route change: each workspace owns its own SyncClient. */
+  const switchTo = (slug: string): void => {
+    writeActiveWorkspace(slug);
+    setOpen(false);
+    router.push(`/${slug}/agent`);
+  };
 
   return (
     <DropdownMenu.Root open={open} onOpenChange={setOpen}>
@@ -141,12 +159,14 @@ export const WorkspaceMenu = observer(function WorkspaceMenu({
         >
           <div className={styles.header}>
             <WorkspaceTile
-              initials={WORKSPACE.initials}
-              color={WORKSPACE.avatarColor}
+              initials={identity.initials}
+              color={identity.avatarColor}
             />
             <span className={styles.headerText}>
-              <span className={styles.headerName}>{workspaceName}</span>
-              <span className={styles.headerEmail}>{accountEmail}</span>
+              <span className={styles.headerName}>{identity.name}</span>
+              {accountEmail !== "" ? (
+                <span className={styles.headerEmail}>{accountEmail}</span>
+              ) : null}
             </span>
           </div>
 
@@ -196,23 +216,43 @@ export const WorkspaceMenu = observer(function WorkspaceMenu({
                   onSelect={() => setOpen(false)}
                 >
                   <WorkspaceTile
-                    initials={WORKSPACE.initials}
-                    color={WORKSPACE.avatarColor}
+                    initials={identity.initials}
+                    color={identity.avatarColor}
                     small
                   />
-                  <span className={styles.label}>{workspaceName}</span>
+                  <span className={styles.label}>{identity.name}</span>
                   <span className={styles.check}>
                     <GlyphCheck />
                   </span>
                 </DropdownMenu.Item>
+                {others.map((entry) => {
+                  const tile = workspaceDisplay(entry.slug, entry.name);
+                  return (
+                    <DropdownMenu.Item
+                      key={entry.slug}
+                      className={styles.item}
+                      onSelect={() => switchTo(entry.slug)}
+                    >
+                      <WorkspaceTile
+                        initials={tile.initials}
+                        color={tile.avatarColor}
+                        small
+                      />
+                      <span className={styles.label}>{tile.name}</span>
+                    </DropdownMenu.Item>
+                  );
+                })}
                 <DropdownMenu.Separator className={styles.separator} />
+                {/* Real: routes back through the workspace-creation step,
+                    which writes a new workspace + its default team. */}
                 <DropdownMenu.Item
                   className={styles.item}
-                  onSelect={() => todo("Create or join a workspace")}
+                  onSelect={() => {
+                    setOpen(false);
+                    router.push("/onboarding/workspace");
+                  }}
                 >
-                  <span className={styles.label}>
-                    Create or join a workspace
-                  </span>
+                  <span className={styles.label}>Create a workspace</span>
                 </DropdownMenu.Item>
               </DropdownMenu.SubContent>
             </DropdownMenu.Portal>

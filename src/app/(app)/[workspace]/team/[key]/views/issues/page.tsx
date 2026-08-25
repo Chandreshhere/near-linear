@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { PagePlaceholder } from "@/components/shell/PagePlaceholder";
+import { TeamViewsClient } from "./TeamViewsClient";
 
 export async function generateMetadata({
   params,
@@ -10,11 +10,16 @@ export async function generateMetadata({
   return { title: `${key} › Views` };
 }
 
+/**
+ * Team-scoped saved views. Renders the SAME page as `/:ws/views/issues`,
+ * filtered to the views saved against this team — it used to be an empty
+ * placeholder body, which on a fresh workspace was an entirely blank screen.
+ */
 export default async function TeamViewsPage({
   params,
 }: {
-  params: Promise<{ key: string }>;
+  params: Promise<{ workspace: string; key: string }>;
 }) {
-  const { key } = await params;
-  return <PagePlaceholder title="Views" headerTitle={`${key} › Views`} />;
+  const { workspace, key } = await params;
+  return <TeamViewsClient workspace={workspace} teamKey={key.toUpperCase()} />;
 }

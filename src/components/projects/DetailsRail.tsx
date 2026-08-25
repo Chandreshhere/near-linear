@@ -376,7 +376,7 @@ export const ProjectDetailsRail = observer(function ProjectDetailsRail({
   };
 
   /* -- synthesized activity feed (newest first) -- */
-  const workspaceName = store.all("Workspace")[0]?.name ?? "Synquic";
+  const workspaceName = store.all("Workspace")[0]?.name ?? "the workspace";
   const now = Date.now();
   type Entry = {
     key: string;

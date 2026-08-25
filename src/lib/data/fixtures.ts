@@ -1,13 +1,25 @@
 /**
- * Seed fixtures for the local-first engine (MASTER_PROMPT.md §26).
+ * DEMO fixtures for the local-first engine (MASTER_PROMPT.md §26).
+ *
+ * ⚠️ NOT the first-run experience. A fresh browser now boots into an EMPTY
+ * workspace it creates during onboarding (src/lib/workspace/workspaces.ts);
+ * nothing in this file is seeded unless demo mode is asked for explicitly —
+ * `?demo=1` on the way into the app, or Settings → Preferences → "Load demo
+ * data" (both go through src/lib/data/demo.ts). The dev-only HTTP mock in
+ * src/server/syncStore.ts also seeds these rows; it is never in the client
+ * bundle.
+ *
  * Content matches the reference captures so golden screenshots stay comparable:
  *   - docs/analysis/capture-projects.md          (10-project table, slugs, colors)
  *   - docs/analysis/capture-driver-app-overview.md (Driver App content + M3 milestone)
  *   - docs/analysis/capture-trendzo-37-research-work.md (TRENDZO-37 issue)
  *   - docs/analysis/capture-welcome-to-linear.md (welcome inbox notification)
  * Pure data — no side effects, no randomness, fixed ISO dates around 2026-08-24.
- * Team/user/workspace constants are imported from src/lib/seed.ts (same
- * ids/keys/colors — single source of truth, no drift).
+ *
+ * The workspace/team/user constants below live HERE, and only here: they
+ * describe the demo data set, so no application surface may import them (a
+ * component that did would show "Synquic / Trendzo / PGME" to every user —
+ * which is exactly the bug this file's isolation prevents).
  */
 
 import type {
@@ -28,7 +40,49 @@ import type {
   WorkflowStateData,
   WorkspaceData,
 } from "@/lib/data/types";
-import { TEAMS, USERS, WORKSPACE } from "@/lib/seed";
+
+// ---------- demo workspace / team / user constants ----------
+
+interface SeedTeam {
+  id: string;
+  key: string;
+  name: string;
+  icon: string; // sprite symbol name
+  color: string;
+}
+
+/** The demo workspace's identity — its slug is also its IndexedDB database. */
+export const DEMO_WORKSPACE = {
+  slug: "synquic-labs",
+  name: "Synquic",
+  initials: "SY",
+  avatarColor: "lch(70% 60 350)",
+};
+
+const TEAMS: SeedTeam[] = [
+  { id: "t-trendzo", key: "TRENDZO", name: "Trendzo", icon: "Team", color: "#00a0ff" },
+  { id: "t-pgme", key: "PGME", name: "PGME", icon: "Feather", color: "#008fff" },
+  { id: "t-shrujan", key: "SHR", name: "Shrujan", icon: "Team", color: "#00aa00" },
+  { id: "t-icon", key: "ICO", name: "Icon", icon: "Chip", color: "#f85911" },
+  { id: "t-trikaal", key: "TRI", name: "Trikaal", icon: "Europe", color: "#789c00" },
+  { id: "t-tiffsy", key: "TIF", name: "Tiffsy", icon: "Radar", color: "#d67600" },
+  { id: "t-homingo", key: "HOM", name: "Homingo", icon: "Home", color: "#00b187" },
+];
+
+const USERS = [
+  {
+    id: "u-yk",
+    name: "yatharth.kaushal@synquic.in",
+    initials: "YK",
+    avatarColor: "lch(70% 60 210)",
+  },
+  {
+    id: "u-cd",
+    name: "chandresh.delwar@synquic.in",
+    initials: "CD",
+    avatarColor: "lch(60% 60 140)",
+  },
+];
 
 // ---------- fixture row helper (keeps per-model type checking) ----------
 
@@ -64,12 +118,12 @@ const USER_CD = "u-cd";
 
 const workspace: WorkspaceData = {
   id: WORKSPACE_ID,
-  slug: WORKSPACE.slug, // "synquic-labs"
-  name: WORKSPACE.name, // "Synquic"
+  slug: DEMO_WORKSPACE.slug, // "synquic-labs"
+  name: DEMO_WORKSPACE.name, // "Synquic"
   createdAt: T_WORKSPACE_CREATED,
 };
 
-/** seed.ts stores the email in `name`; displayName = email local part ("/profiles/yatharth.kaushal"). */
+/** USERS stores the email in `name`; displayName = email local part ("/profiles/yatharth.kaushal"). */
 const users: UserData[] = USERS.map((u, i) => ({
   id: u.id,
   email: u.name,
@@ -100,7 +154,7 @@ const userSettings: UserSettingsData = {
   assignOnStart: false,
 };
 
-// ---------- teams (ids/keys/colors imported from src/lib/seed.ts) ----------
+// ---------- teams ----------
 
 const teams: TeamData[] = TEAMS.map((t, i) => ({
   id: t.id,

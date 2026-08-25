@@ -13,6 +13,7 @@ import {
   SettingsSections,
 } from "@/components/settings/SettingsPage";
 import { SidebarCustomizeDialog } from "@/components/settings/SidebarCustomizeDialog";
+import { WorkspaceDataSection } from "@/components/settings/WorkspaceDataSection";
 import { useUserSettings } from "@/components/settings/useUserSettings";
 import {
   DEFAULT_APPEARANCE,
@@ -30,7 +31,8 @@ import styles from "@/components/settings/settings.module.css";
 /**
  * Preferences (CAPTURED, exact — capture-preferences.md §6, MASTER_PROMPT
  * §10.9): four sections, the captured row ids, labels, descriptions and
- * control types. Every control is bound to the `UserSettings` row through the
+ * control types, plus one section of our own ("Workspace data") for the demo
+ * data set and the local reset. Every control is bound to the `UserSettings` row through the
  * optimistic transaction queue, and the interface prefs additionally project
  * onto the document (see SettingsEffects).
  */
@@ -405,6 +407,11 @@ export const PreferencesView = observer(function PreferencesView() {
             />
           </SettingsCard>
         </SettingsSection>
+        {/* ---------------- Workspace data (not captured — ours) ----------
+            Demo data and a full local reset. The app seeds nothing on first
+            run any more, so these are how you get sample data in and how you
+            start over. See src/lib/data/demo.ts. */}
+        <WorkspaceDataSection />
       </SettingsSections>
 
       <SidebarCustomizeDialog open={customizeOpen} onOpenChange={setCustomizeOpen} />

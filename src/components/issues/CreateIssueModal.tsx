@@ -38,6 +38,7 @@ import { PriorityIcon, StatusIcon } from "@/components/icons/StatusIcon";
 import { useSyncClient } from "@/lib/data/DataProvider";
 import { KeyboardProvider, useScope, useShortcut } from "@/lib/keyboard";
 import { showToast } from "@/lib/toast";
+import { openCreateTeamDialog } from "@/components/teams/CreateTeamDialog";
 import { AttachmentList, useAttachmentInput } from "./attachments";
 import type { SyncStore } from "@/lib/data/store";
 import type {
@@ -348,7 +349,16 @@ export const CreateIssueHost = observer(function CreateIssueHost(): JSX.Element 
         .sort((a, b) => a.sortOrder - b.sortOrder);
       const nextTeamId =
         prefill?.teamId ?? draft?.properties.teamId ?? teams[0]?.id;
-      if (nextTeamId === undefined) return; // store not hydrated yet
+      if (nextTeamId === undefined) {
+        // Nothing to file an issue against. Silence here made every empty
+        // state's primary button look broken — send the user to the thing
+        // that has to exist first instead.
+        if (client.status === "ready") {
+          showToast("Create a team first — issues belong to one");
+          openCreateTeamDialog();
+        }
+        return;
+      }
       const draftMatchesTeam =
         draft !== null && draft.properties.teamId === nextTeamId;
       const nextStateId =
@@ -356,7 +366,10 @@ export const CreateIssueHost = observer(function CreateIssueHost(): JSX.Element 
         (draftMatchesTeam
           ? draft.properties.stateId
           : defaultStateFor(store, nextTeamId)?.id);
-      if (nextStateId === undefined) return;
+      if (nextStateId === undefined) {
+        showToast("This team has no workflow statuses yet");
+        return;
+      }
 
       lastPrefillRef.current = prefill;
       setTeamId(nextTeamId);

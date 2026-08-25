@@ -16,16 +16,50 @@ npm install
 npm run dev          # http://localhost:3000
 ```
 
-Nothing else to configure. The workspace seeds itself from fixtures on first
-load and persists to IndexedDB.
+Nothing else to configure.
+
+**First run is genuinely empty.** A new browser lands on the marketing page,
+signs in, and onboarding asks it to create a workspace: the name becomes a real
+`Workspace` row, the URL becomes both the route prefix and the IndexedDB
+database, and a first team named after the workspace is created with its
+identifier and the six default workflow statuses. Nothing is seeded, and two
+browsers never see each other's data.
 
 | Route | What it is |
 |---|---|
 | `/` | Marketing landing page |
 | `/login` | Sign-in (email code, plus provider seams) |
-| `/synquic-labs/agent` | The app — agent chat is the default home view |
+| `/app` | Entry point — resolves to your workspace, onboarding, or login |
+| `/onboarding/workspace` | Create a workspace (+ its first team) |
+| `/<your-workspace>/agent` | The app — agent chat is the default home view |
 | `/dev/primitives` | UI primitive gallery |
-| `/dev/data` | Sync-engine inspector |
+| `/dev/data` | Sync-engine inspector (active workspace) |
+
+## Demo data
+
+The sample workspace used for screenshots and tests (10 projects, issues,
+cycles, a triage queue) is **opt-in**. Two ways in:
+
+```
+http://localhost:3000/app?demo=1     # creates/opens the demo workspace
+http://localhost:3000/?demo=1        # same, from the landing page
+```
+
+or, inside any workspace, **Settings → Preferences → Workspace data →
+"Load demo data"**, which merges the sample data into the workspace you are
+already in without touching its name or your preferences. The same section has
+**"Reset workspace"**, which wipes this browser's copy (IndexedDB +
+`linearAuth` / `linearOnboarding` / `linearWorkspace` / `linearWorkspaces`) and
+returns you to onboarding. Both are behind confirm dialogs.
+
+> The dev-only HTTP mock (`src/server/syncStore.ts`) still seeds fixtures into
+> its in-memory store on boot. It is server-side, never in the client bundle,
+> and only reachable with `NEXT_PUBLIC_SYNC_TRANSPORT=http`.
+
+Local state lives under four `localStorage` keys: `linearAuth` (session),
+`linearOnboarding` (progress), `linearWorkspace` (active slug) and
+`linearWorkspaces` (every workspace this browser created). Each workspace slug
+maps to its own IndexedDB database, `linear_recon_<slug>`.
 
 ## What's in it
 
@@ -51,7 +85,7 @@ UI (React, MobX observers)
         ├── SyncStore        in-memory object pool
         ├── Persistence      IndexedDB (rows, meta, transaction queue)
         └── SyncTransport ←─ the ONLY seam that can touch a network
-              ├── LocalTransport   default — fixtures + BroadcastChannel
+              ├── LocalTransport   default — IndexedDB + BroadcastChannel
               └── HttpTransport    REST + SSE (your backend)
 ```
 
@@ -90,7 +124,8 @@ npx tsc --noEmit   # typecheck
 | `src/app/(app)` | The application routes |
 | `src/app/(marketing)` | Landing page |
 | `src/components` | UI primitives and feature surfaces |
-| `src/lib/data` | The local-first engine (store, persistence, queue, transports) |
+| `src/lib/data` | The local-first engine (store, persistence, queue, transports) + opt-in demo data |
+| `src/lib/workspace` | Workspace creation, the local workspace registry, team helpers |
 | `BACKEND_API.md` | Backend contract |
 | `PROGRESS.md` | Build log, decisions and known seams |
 | `docs/analysis` | Design-reference research notes |

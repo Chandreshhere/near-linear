@@ -188,11 +188,14 @@ a different mount point (e.g. `NEXT_PUBLIC_API_BASE_URL=https://api.example.com/
 The smallest response that boots the app to a usable workspace. Note two hard requirements from
 the current frontend:
 
-- The route is `/<workspaceSlug>/...`. Navigation links are generated from
-  `src/lib/seed.ts:WORKSPACE.slug` (`"synquic-labs"`), so unless you edit `seed.ts` your
-  Workspace row's `slug` should match. The `[workspace]` route param itself is opaque to
-  `HttpTransport` (it is *not* sent to the server — see §8.2); the UI renders
-  `store.all("Workspace")[0]` (`src/components/nav/WorkspaceMenu.tsx:121`).
+- The route is `/<workspaceSlug>/...`. Nothing in the app hardcodes a slug any more: the
+  active one is created by the user in onboarding and stored in
+  `localStorage.linearWorkspace` (`src/lib/workspace/active.ts`), so your Workspace row's
+  `slug` should simply match the segment the client is on. The `[workspace]` route param
+  itself is opaque to `HttpTransport` (it is *not* sent to the server — see §8.2); the UI
+  renders `store.all("Workspace")[0]` (`src/components/nav/WorkspaceMenu.tsx`).
+- An **empty bootstrap is valid**: zero rows means "this workspace does not exist / has no
+  data yet", and the client routes the user to onboarding rather than inventing one.
 - The signed-in user id is currently the constant `CURRENT_USER_ID = "u-yk"`
   (`src/lib/issues/viewPrefs.ts:21`). **Your bootstrap must contain a `User` row with that id**
   until you wire the session through (§6.4).
@@ -676,7 +679,7 @@ Source of truth: `src/lib/data/types.ts`. These are the **wire and storage shape
 | Field | Type | Req | Notes |
 |---|---|---|---|
 | `id` | string | ✔ | |
-| `slug` | string | ✔ | URL segment. The app's own links come from `src/lib/seed.ts:WORKSPACE.slug` = `"synquic-labs"`; match it or edit `seed.ts`. |
+| `slug` | string | ✔ | URL segment. Must match the `/<workspaceSlug>/...` path the client is on (created in onboarding, remembered in `localStorage.linearWorkspace`). |
 | `name` | string | ✔ | Shown in the sidebar header (`store.all("Workspace")[0]?.name`). |
 | `createdAt` | ISODate | ✔ | |
 
@@ -1703,8 +1706,8 @@ persistence.
 | `src/lib/data/store.ts` | MobX pool + merge semantics (`mergeInto`, `applyAction`). |
 | `src/lib/data/persistence.ts` | IndexedDB layer, schema wipe rule, durable transaction queue. |
 | `src/lib/data/transactions.ts` | Optimistic queue: batching, backoff, rollback, restore. |
-| `src/lib/data/fixtures.ts` | The 80-row seed set used in every example here. |
-| `src/lib/seed.ts` | Workspace/team/user constants (`WORKSPACE.slug = "synquic-labs"`). |
+| `src/lib/data/fixtures.ts` | The 80-row DEMO set used in every example here (opt-in only — see `src/lib/data/demo.ts`). |
+| `src/lib/workspace/workspaces.ts` | Workspace creation (workspace + owner + default team + statuses). |
 | `src/server/syncStore.ts` | Dev-only reference server: row map, sync-id allocation, action log, subscribers. |
 | `src/app/api/sync/bootstrap/route.ts` | Dev-only NDJSON bootstrap endpoint. |
 | `src/app/api/sync/mutation/route.ts` | Dev-only mutation endpoint (zod validation). |

@@ -139,7 +139,11 @@ export const TeamProjectsView = observer(function TeamProjectsView({
             ) : null
           ) : (
             <Suspense fallback={null}>
-              <ProjectsTable viewKey={viewKey} teamId={team.id} />
+              <ProjectsTable
+                viewKey={viewKey}
+                teamId={team.id}
+                onCreateProject={() => setNewProjectOpen(true)}
+              />
             </Suspense>
           )}
         </div>

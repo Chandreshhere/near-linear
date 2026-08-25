@@ -66,6 +66,7 @@ import { getSelectionStore, useListNavigation } from "@/lib/issues/selection";
 import { BulkBar } from "@/components/issues/BulkBar";
 import { GroupHeader } from "@/components/ui/GroupHeader";
 import { Button } from "@/components/ui/Button";
+import { EmptyState } from "@/components/ui/EmptyState";
 import { Menu, type MenuItem } from "@/components/ui/Menu";
 import { PriorityIcon } from "@/components/icons/StatusIcon";
 import { Icon } from "@/components/icons/Icon";
@@ -629,10 +630,17 @@ const GroupIcon = observer(function GroupIcon({
 export const ProjectsTable = observer(function ProjectsTable({
   viewKey,
   teamId,
+  onCreateProject,
 }: {
   /** Persistence key for display options, filters and selection. */
   viewKey: string;
   teamId?: string;
+  /**
+   * Opens the REAL New project dialog. The empty state's primary action is
+   * wired to it, so a workspace with no projects is a starting point rather
+   * than a bare column-header row.
+   */
+  onCreateProject?: () => void;
 }) {
   const store = useStore();
   const client = useSyncClient();
@@ -654,6 +662,18 @@ export const ProjectsTable = observer(function ProjectsTable({
 
   const groups = groupProjects(ordered, pref.grouping, store, pref.showEmptyGroups);
   const grouped = pref.grouping !== "none";
+
+  /*
+   * Nothing to show splits in two: a workspace that has no projects yet
+   * (invite the first one) and filters that hid the ones it has (say so, so
+   * the user does not think their data vanished).
+   */
+  const rowCount = groups.reduce((total, group) => total + group.projects.length, 0);
+  const inScopeCount = store
+    .all("Project")
+    .filter((project) => teamId === undefined || project.teamIds.includes(teamId)).length;
+  const isEmpty = rowCount === 0;
+  const hiddenByFilters = isEmpty && inScopeCount > 0;
 
   // asc → desc → back to manual order.
   const toggleSort = (key: SortKey): void => {
@@ -741,6 +761,34 @@ export const ProjectsTable = observer(function ProjectsTable({
   ];
 
   const composerProject = composerFor === null ? undefined : store.get("Project", composerFor);
+
+  if (isEmpty) {
+    return (
+      <div className={styles.emptyFill}>
+        <EmptyState
+          illustration={<ProjectStatusIcon category="backlog" progress={0} size={28} />}
+          heading={
+            hiddenByFilters
+              ? "No projects match these filters"
+              : teamId !== undefined
+                ? "This team has no projects yet"
+                : "No projects yet"
+          }
+          primary={
+            hiddenByFilters || onCreateProject === undefined ? undefined : (
+              <Button variant="primary" size={32} onClick={onCreateProject}>
+                New project
+              </Button>
+            )
+          }
+        >
+          {hiddenByFilters
+            ? "Clear or widen the filters above to see the projects in this view."
+            : "Projects group the work behind an outcome — issues, milestones, updates and a target date. Create one to get started."}
+        </EmptyState>
+      </div>
+    );
+  }
 
   return (
     <>

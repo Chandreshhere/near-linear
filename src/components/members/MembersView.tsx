@@ -175,6 +175,21 @@ export const MembersView = observer(function MembersView(): JSX.Element {
               <span className={styles.menuSlot} aria-hidden="true" />
             </div>
 
+            {members.length === 0 ? (
+              /* Only reachable before the pool hydrates or if every member
+                 row is gone — never a bare header row with nothing under it. */
+              <div className={styles.row} role="row">
+                <span className={styles.cellMain} role="cell">
+                  <span className={styles.stack}>
+                    <span className={styles.name}>No members yet</span>
+                    <span className={styles.sub}>
+                      Invite the people you work with to get started.
+                    </span>
+                  </span>
+                </span>
+              </div>
+            ) : null}
+
             {members.map((user) => (
               <div
                 className={styles.row}

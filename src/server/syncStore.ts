@@ -13,6 +13,13 @@
  * changes here must be mirrored in LocalTransport (and vice versa) — the two
  * are the same contract, one over HTTP and one in the tab.
  *
+ * NOTE ON SEEDING: this mock still boots with the §26 fixtures in it, and that
+ * is deliberate — it is the stand-in for "a backend that already has data", and
+ * it is the only way to exercise the HTTP path without writing a server. It is
+ * server-side only and never reaches the client bundle. The SHIPPED app seeds
+ * nothing: LocalTransport bootstraps empty and the workspace is created by the
+ * user in onboarding (src/lib/workspace/workspaces.ts).
+ *
  * Holds the authoritative row set in memory, allocates monotonic syncIds,
  * keeps a capped action log for delta catch-up, and fans broadcast actions
  * out to SSE subscribers. A single instance survives Next.js dev HMR by

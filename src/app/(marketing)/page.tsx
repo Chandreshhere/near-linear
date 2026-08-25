@@ -1,5 +1,6 @@
 import type { CSSProperties } from "react";
 import Link from "next/link";
+import { redirect } from "next/navigation";
 import { ProductMark } from "@/app/(app)/login/glyphs";
 import styles from "./landing.module.css";
 import { SiteHeader } from "./SiteHeader";
@@ -64,7 +65,16 @@ function SectionRule({ className }: { className?: string }) {
    eventually carries — they are labelled honestly and name no company. */
 const PROOF_WIDTHS = [58, 44, 72, 50, 66, 40, 62, 48];
 
-export default function LandingPage() {
+export default async function LandingPage({
+  searchParams,
+}: {
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
+}) {
+  // Demo mode is documented as `?demo=1`; honour it wherever it is typed by
+  // handing off to the entry resolver, which owns the seeding (README.md).
+  const { demo } = await searchParams;
+  if (demo === "1") redirect("/app?demo=1");
+
   return (
     <div className={styles.shell}>
       <a href="#skip-nav" className={styles.skipLink}>

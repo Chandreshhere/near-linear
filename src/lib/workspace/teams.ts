@@ -97,6 +97,25 @@ export function deriveTeamKey(name: string): string {
   return raw.replace(/^[^A-Z]+/, "").slice(0, TEAM_KEY_MAX);
 }
 
+/**
+ * Identifier for the team a NEW WORKSPACE auto-creates (§17.2 "a default team
+ * is created with the workspace name"). The captured behaviour takes the first
+ * three letters of the name rather than its initials, so "Acme" and
+ * "Acme Labs" both land on `ACM` — that is the prefix people expect to see on
+ * their very first issue. `deriveTeamKey` above stays the rule for teams a
+ * user adds later ("Growth Team" → `GT`).
+ */
+export function deriveWorkspaceTeamKey(name: string): string {
+  const letters = name
+    .toUpperCase()
+    .replace(/[^A-Z0-9]/g, "")
+    .replace(/^[^A-Z]+/, "");
+  const candidate = letters.slice(0, 3);
+  if (candidate.length >= TEAM_KEY_MIN) return candidate;
+  const fallback = deriveTeamKey(name);
+  return fallback.length >= TEAM_KEY_MIN ? fallback : "TEAM";
+}
+
 /** Case-insensitive uniqueness check against the pool (optionally skipping one team). */
 export function isTeamKeyTaken(
   store: SyncStore,
@@ -131,7 +150,8 @@ export function validateTeamKey(
   return null;
 }
 
-function newId(prefix: string): UUID {
+/** Local id allocator — crypto.randomUUID when available, else a sortable stub. */
+export function newId(prefix: string): UUID {
   const c = typeof globalThis.crypto !== "undefined" ? globalThis.crypto : undefined;
   if (c !== undefined && typeof c.randomUUID === "function") return c.randomUUID();
   return `${prefix}-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`;

@@ -385,3 +385,10 @@
     transition: none;
   }
 }
+
+/* Sized parent for the "no statuses" empty state (EmptyState centers itself). */
+.boardEmpty {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+}

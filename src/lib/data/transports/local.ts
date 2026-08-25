@@ -5,8 +5,9 @@
  * any kind. The app boots, mutates, persists and syncs across tabs with the
  * network unplugged.
  *
- *   bootstrap() — fresh database → the §26 fixtures; database that already
- *                 holds rows → those rows (never re-seeds over real data).
+ *   bootstrap() — the rows this workspace's database holds. A brand-new
+ *                 workspace bootstraps EMPTY: fixtures are opt-in demo data
+ *                 (src/lib/data/demo.ts), not a default.
  *   submit()    — validates each transaction exactly like the dev mock
  *                 (src/server/syncStore.ts), applies it to the IndexedDB
  *                 mirror, allocates monotonic sync ids from the persisted
@@ -24,7 +25,6 @@
 
 import type { IDBPDatabase } from "idb";
 
-import { buildFixtures } from "@/lib/data/fixtures";
 import {
   META_STORE,
   openSchemaDb,
@@ -124,19 +124,21 @@ export class LocalTransport implements SyncTransport {
   // ---------- bootstrap ----------
 
   /**
-   * Cold bootstrap. A database that already holds rows (meta lost, rows kept)
-   * returns those rows rather than re-seeding fixtures over live data; the
-   * ordinary warm path never reaches the transport at all.
+   * Cold bootstrap: whatever this workspace's database holds — which for a
+   * brand-new workspace is NOTHING.
+   *
+   * This used to hand back §26 fixtures whenever the database was empty, which
+   * meant every browser on earth booted into the same invented workspace. An
+   * empty bootstrap is a perfectly valid bootstrap (BACKEND_API.md: "zero
+   * rows"); the workspace itself is created by the user in onboarding
+   * (src/lib/workspace/workspaces.ts), and the demo data set is opt-in through
+   * src/lib/data/demo.ts.
    */
   async bootstrap(): Promise<BootstrapPayload> {
     const db = await this.#db();
     const lastSyncId = await this.#readCounter(db);
-    const stored = await this.#loadRows(db);
-    return {
-      rows: stored.length > 0 ? stored : buildFixtures(),
-      lastSyncId,
-      schemaVersion: SCHEMA_VERSION,
-    };
+    const rows = await this.#loadRows(db);
+    return { rows, lastSyncId, schemaVersion: SCHEMA_VERSION };
   }
 
   // ---------- write path ----------

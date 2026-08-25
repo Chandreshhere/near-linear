@@ -1,5 +1,3 @@
-import { WORKSPACE } from "@/lib/seed";
-
 /**
  * Landing-page copy and link targets.
  *
@@ -9,13 +7,20 @@ import { WORKSPACE } from "@/lib/seed";
  * name, wordmark, or customer reference is carried over from it.
  */
 
+/**
+ * `openApp` is deliberately NOT a workspace URL. The landing page is static and
+ * shared by every visitor, so it cannot know which workspace (if any) this
+ * browser belongs to — `/app` resolves that at runtime and forwards to the
+ * active workspace, to onboarding, or to login.
+ */
 export const ROUTES = {
-  openApp: `/${WORKSPACE.slug}/agent`,
+  openApp: "/app",
   login: "/login",
   signup: "/login?mode=signup",
 } as const;
 
-export const PRODUCT_NAME = WORKSPACE.name;
+/** The product's own name — unrelated to any workspace a user creates. */
+export const PRODUCT_NAME = "Synquic";
 
 export const NAV_LINKS = [
   { label: "Product", href: "#product", optional: false },

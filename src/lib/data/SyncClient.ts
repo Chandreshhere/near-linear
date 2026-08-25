@@ -467,6 +467,24 @@ export class SyncClient {
     },
   };
 
+  /**
+   * "Reset workspace" (src/lib/data/demo.ts): clear every store of this
+   * workspace's IndexedDB database — rows, `_meta` and the durable transaction
+   * queue — empty the in-memory pool and shut the client down. With `_meta`
+   * gone the next boot cold-bootstraps, which for LocalTransport means an
+   * empty workspace. Wiping in place (rather than deleteDatabase) can never be
+   * blocked by another tab still holding a connection.
+   */
+  async resetLocalData(): Promise<void> {
+    const persistence = this.#persistence ?? (await this.#persistenceReady.promise);
+    await persistence.wipe();
+    this.store.clear();
+    runInAction(() => {
+      this.lastSyncId = 0;
+    });
+    this.dispose();
+  }
+
   dispose(): void {
     if (this.disposed) return;
     this.disposed = true;

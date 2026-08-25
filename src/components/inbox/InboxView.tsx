@@ -26,7 +26,8 @@ import { Header } from "@/components/shell/Header";
 import { Icon } from "@/components/icons/Icon";
 import { StatusIcon } from "@/components/icons/StatusIcon";
 import { Avatar } from "@/components/ui/Avatar";
-import { IconButton } from "@/components/ui/Button";
+import { Button, IconButton } from "@/components/ui/Button";
+import { EmptyState } from "@/components/ui/EmptyState";
 import { AppContextMenu } from "@/components/ui/ContextMenu";
 import type { MenuItem } from "@/components/ui/Menu";
 import { Menu } from "@/components/ui/Menu";
@@ -773,12 +774,35 @@ export const InboxView = observer(function InboxView({
           />
           {activeNotification === undefined ? (
             <div className={styles.readingEmpty}>
-              <span className={styles.readingEmptyGlyph}>
-                <InboxOutlineGlyph />
-              </span>
-              <span className={styles.readingEmptyLabel}>
-                No notification selected
-              </span>
+              {/* An inbox with nothing in it at all is a different message
+                  from an inbox where no row happens to be selected. */}
+              {all.length === 0 ? (
+                <EmptyState
+                  illustration={<InboxOutlineGlyph />}
+                  heading="Your inbox is empty"
+                  primary={
+                    <Button
+                      variant="primary"
+                      size={32}
+                      onClick={() => router.push(`/${workspace}/my-issues/assigned`)}
+                    >
+                      Go to My issues
+                    </Button>
+                  }
+                >
+                  Assignments, mentions, comments and status changes on work you
+                  subscribe to land here. Nothing has yet.
+                </EmptyState>
+              ) : (
+                <>
+                  <span className={styles.readingEmptyGlyph}>
+                    <InboxOutlineGlyph />
+                  </span>
+                  <span className={styles.readingEmptyLabel}>
+                    No notification selected
+                  </span>
+                </>
+              )}
             </div>
           ) : (
             <div

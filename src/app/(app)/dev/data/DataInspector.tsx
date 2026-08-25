@@ -2,11 +2,17 @@
 
 /**
  * Dev-only inspector for the local-first engine (§19). Boots a SyncClient for
- * the synquic-labs workspace and shows live pool contents + two optimistic
+ * whichever workspace this browser is in (localStorage.linearWorkspace — the
+ * same slug the app routes on) and shows live pool contents + two optimistic
  * mutation buttons that exercise the full round-trip:
  * enqueue → MobX pool → durable queue → POST /api/sync/mutation → SSE delta.
+ *
+ * With no workspace yet there is nothing to inspect, so it points at
+ * onboarding rather than conjuring one.
  */
 
+import Link from "next/link";
+import { useEffect, useState } from "react";
 import { observer } from "mobx-react-lite";
 import {
   DataProvider,
@@ -14,6 +20,7 @@ import {
   useSyncClient,
 } from "@/lib/data/DataProvider";
 import { MODEL_NAMES } from "@/lib/data/types";
+import { readActiveWorkspace } from "@/lib/workspace/active";
 
 const wrap: React.CSSProperties = {
   minHeight: "100vh",
@@ -139,8 +146,36 @@ const Inspector = observer(function Inspector() {
 });
 
 export function DataInspector() {
+  // localStorage is browser-only — resolve after mount, like every other
+  // active-workspace consumer.
+  const [slug, setSlug] = useState<string | null>(null);
+  const [resolved, setResolved] = useState(false);
+
+  useEffect(() => {
+    setSlug(readActiveWorkspace());
+    setResolved(true);
+  }, []);
+
+  if (!resolved) return <div style={wrap} />;
+
+  if (slug === null) {
+    return (
+      <div style={wrap}>
+        <div id="skip-nav" tabIndex={-1} />
+        <h2 style={h2}>Data Inspector</h2>
+        <p style={{ color: "#8a8f98" }}>
+          This browser has no workspace yet — nothing is stored to inspect.{" "}
+          <Link href="/onboarding/workspace" style={{ color: "#7b8cff" }}>
+            Create one
+          </Link>
+          .
+        </p>
+      </div>
+    );
+  }
+
   return (
-    <DataProvider workspace="synquic-labs">
+    <DataProvider workspace={slug}>
       {/* Skip-link target: this route renders outside AppShell. */}
       <div id="skip-nav" tabIndex={-1} />
       <Inspector />

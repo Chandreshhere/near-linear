@@ -5,12 +5,7 @@ import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/Button";
 import { Dialog } from "@/components/ui/Dialog";
 import { Input } from "@/components/ui/Input";
-import {
-  isOnboarded,
-  writeSession,
-  type LoginMethod,
-} from "@/lib/auth/session";
-import { WORKSPACE } from "@/lib/seed";
+import { writeSession, type LoginMethod } from "@/lib/auth/session";
 import {
   ArrowLeftGlyph,
   MailGlyph,
@@ -216,11 +211,16 @@ export function LoginView() {
   const emailRef = useRef<HTMLInputElement>(null);
   const codeRefs = useRef<(HTMLInputElement | null)[]>([]);
 
-  /** Every successful method lands here. */
+  /**
+   * Every successful method lands here. Where to go next depends on what this
+   * browser already has (a workspace? none at all?), which only `/app` can
+   * answer — see src/app/(app)/app/AppEntryView.tsx. Nothing here may assume a
+   * workspace exists.
+   */
   const completeLogin = useCallback(
     (method: LoginMethod, address?: string) => {
       writeSession(method, address);
-      router.push(isOnboarded() ? `/${WORKSPACE.slug}/agent` : "/onboarding/profile");
+      router.push("/app");
     },
     [router],
   );

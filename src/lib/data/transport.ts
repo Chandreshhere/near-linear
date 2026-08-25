@@ -5,9 +5,10 @@
  * bookkeeping) is transport-agnostic and never touches the network.
  *
  * Implementations:
- *   - transports/local.ts  LocalTransport — DEFAULT. 100% in-browser: fixtures
- *                          seed the IndexedDB mirror, sync ids come from a
- *                          persisted counter, cross-tab realtime rides a
+ *   - transports/local.ts  LocalTransport — DEFAULT. 100% in-browser: the
+ *                          IndexedDB mirror IS the authority (a new workspace
+ *                          bootstraps empty), sync ids come from a persisted
+ *                          counter, cross-tab realtime rides a
  *                          BroadcastChannel. Zero server dependency.
  *   - transports/http.ts   HttpTransport — GET  bootstrap (NDJSON stream),
  *                          POST mutation, EventSource delta stream. This is
@@ -43,7 +44,8 @@ export interface SyncTransport {
   /**
    * Cold bootstrap: the complete authoritative row set plus the sync
    * high-water mark. Only called when the local IndexedDB mirror has no
-   * `_meta` record — a warm start never hits the transport.
+   * `_meta` record — a warm start never hits the transport. ZERO rows is a
+   * valid answer: that is what a workspace nobody has created yet looks like.
    */
   bootstrap(): Promise<BootstrapPayload>;
 
