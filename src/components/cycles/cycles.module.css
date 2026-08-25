@@ -1,0 +1,346 @@
+/*
+ * Cycles surface — MASTER_PROMPT.md §22 (DOCUMENTED tier), chrome idioms
+ * from §10.6 team pages. Tokens only; hover idiom = instant in
+ * (--speed-highlightFadeIn: 0s), 0.15s out, gated behind any-hover.
+ */
+
+/* ================= page scaffold ================= */
+
+.page {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.scroller {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  outline: none;
+}
+
+.column {
+  max-width: 1024px;
+  margin-inline: auto;
+  padding: 24px 32px 64px;
+}
+
+/* ================= active cycle card ================= */
+
+.activeCard {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 20px;
+  border-radius: var(--radius-card);
+  background: var(--color-bg-surface);
+  box-shadow: 0 0 0 var(--thin-pixel) var(--color-border-thin);
+  margin-bottom: 28px;
+}
+
+.cardTitleRow {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+}
+
+.cardTitle {
+  font-size: var(--font-size-regular);
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-text-title);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.cardTitle:hover {
+  text-decoration: underline;
+}
+
+/* Phase pill: "Active" (orange family, like the started status glyph). */
+.phaseBadge {
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  height: 18px;
+  padding: 0 7px;
+  border-radius: var(--radius-rounded);
+  font-size: var(--font-size-micro);
+  font-weight: var(--font-weight-medium);
+  color: var(--color-orange);
+  background: color-mix(in srgb, var(--color-orange) 14%, transparent);
+}
+.phaseBadge[data-phase="cooldown"] {
+  color: var(--color-text-muted);
+  background: var(--color-bg-shade);
+}
+
+.cardSpacer {
+  flex: 1;
+}
+
+.cardRange {
+  flex: none;
+  font-size: var(--font-size-small);
+  color: var(--color-text-muted);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.cardDaysLeft {
+  flex: none;
+  font-size: var(--font-size-small);
+  color: var(--color-text-base);
+  white-space: nowrap;
+}
+
+/* "N issues · M done · capacity ~K" */
+.capacityLine {
+  font-size: var(--font-size-small);
+  color: var(--color-text-muted);
+  font-variant-numeric: tabular-nums;
+}
+
+/* ================= scope / progress graph ================= */
+
+.graph {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.plotArea {
+  position: relative;
+  border-bottom: var(--thin-pixel) solid var(--color-border-thin);
+}
+
+.plot {
+  display: block;
+  width: 100%;
+}
+
+.scopeLine {
+  fill: none;
+  stroke: var(--color-text-faint);
+  stroke-width: 1.5;
+  vector-effect: non-scaling-stroke;
+  stroke-linejoin: round;
+}
+
+.completedLine {
+  fill: none;
+  stroke: var(--color-accent);
+  stroke-width: 1.5;
+  vector-effect: non-scaling-stroke;
+  stroke-linejoin: round;
+}
+
+.completedArea {
+  fill: color-mix(in srgb, var(--color-accent) 18%, transparent);
+  stroke: none;
+}
+
+/* Dashed "today" marker — HTML so the dash pattern never stretches. */
+.todayMarker {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 0;
+  border-left: 1px dashed var(--color-border-solid);
+  pointer-events: none;
+}
+.todayLabel {
+  position: absolute;
+  top: -2px;
+  transform: translateX(-50%);
+  font-size: var(--font-size-micro);
+  font-weight: var(--font-weight-medium);
+  color: var(--color-text-faint);
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  pointer-events: none;
+}
+
+.axisRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-top: 6px;
+  font-size: var(--font-size-micro);
+  color: var(--color-text-faint);
+  font-variant-numeric: tabular-nums;
+}
+
+.legend {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  font-size: var(--font-size-micro);
+  color: var(--color-text-muted);
+}
+.legendItem {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+.legendSwatch {
+  width: 12px;
+  height: 2px;
+  border-radius: 1px;
+  background: var(--color-text-faint);
+}
+.legendSwatch[data-series="completed"] {
+  background: var(--color-accent);
+}
+
+/* ================= cycle list rows ================= */
+
+.section {
+  margin-top: 20px;
+}
+
+.rowGrid {
+  display: grid;
+  grid-template-columns: 20px minmax(0, max-content) minmax(0, 1fr) max-content 52px;
+  column-gap: 10px;
+  align-items: center;
+  height: 100%;
+  padding: 0 16px 0 10px;
+}
+
+.rowIcon {
+  display: grid;
+  place-items: center;
+  color: var(--icon-default-color);
+}
+
+.rowName {
+  font-size: var(--font-size-small);
+  font-weight: var(--font-weight-medium);
+  color: var(--color-text-title);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.rowRange {
+  font-size: var(--font-size-small);
+  color: var(--color-text-muted);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.rowCount {
+  font-size: var(--font-size-small);
+  color: var(--color-text-muted);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.rowPercent {
+  text-align: right;
+  font-size: var(--font-size-small);
+  color: var(--color-text-base);
+  font-variant-numeric: tabular-nums;
+}
+
+/* ================= cycle detail ================= */
+
+.detailHero {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-bottom: 24px;
+}
+
+.detailTitleRow {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+}
+
+.detailTitle {
+  font-size: var(--font-size-title3);
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-text-title);
+  letter-spacing: -0.01em;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.detailMeta {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: var(--font-size-small);
+  color: var(--color-text-muted);
+  font-variant-numeric: tabular-nums;
+}
+.metaDot {
+  color: var(--color-text-faint);
+}
+.metaStrong {
+  color: var(--color-text-base);
+}
+
+.issuesSection {
+  margin-top: 28px;
+}
+
+/* Issue row inside a cycle: [id 64][status 20][title 1fr][spacer][avatar 24][date 60] */
+.issueRowGrid {
+  display: grid;
+  grid-template-columns: minmax(64px, max-content) 20px minmax(0, 1fr) 8px 24px 60px;
+  column-gap: 8px;
+  align-items: center;
+  height: 100%;
+  padding: 0 16px 0 12px;
+}
+
+.issueId {
+  font-size: var(--font-size-mini);
+  font-weight: var(--font-weight-normal);
+  color: var(--color-text-muted);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.issueStatus {
+  display: grid;
+  place-items: center;
+}
+
+.issueTitle {
+  min-width: 0;
+  font-size: var(--font-size-small);
+  font-weight: var(--font-weight-medium);
+  color: var(--color-text-title);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.issueAssignee {
+  display: grid;
+  place-items: center;
+  color: var(--color-text-faint);
+}
+
+.issueDate {
+  font-size: var(--font-size-mini);
+  color: var(--color-text-muted);
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.emptyFill {
+  flex: 1;
+  display: flex;
+  min-height: 0;
+}

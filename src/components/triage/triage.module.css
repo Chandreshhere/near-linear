@@ -1,0 +1,269 @@
+/*
+ * Triage split view — MASTER_PROMPT.md §22 (DOCUMENTED tier), layout idioms
+ * shared with the Inbox split (§10.4): 400px list pane + reading pane.
+ * Tokens only; hover idiom = instant in, 0.15s out, gated behind any-hover.
+ */
+
+/* ================= split container ================= */
+
+.split {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  align-items: stretch;
+}
+
+.listPane {
+  position: relative;
+  flex: none;
+  width: 400px;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  border-right: var(--thin-pixel) solid var(--color-border-thin);
+}
+
+.listScroller {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding: 8px;
+  outline: none;
+}
+
+/* Count chip beside the "Triage" header title. */
+.countBadge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 5px;
+  border-radius: var(--radius-rounded);
+  background: var(--color-bg-shade);
+  font-size: var(--font-size-micro);
+  font-weight: var(--font-weight-medium);
+  color: var(--color-text-muted);
+  font-variant-numeric: tabular-nums;
+}
+
+/* ================= list rows (55px, inbox anatomy) ================= */
+
+.row {
+  position: relative;
+  isolation: isolate;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  height: 55px;
+  margin-block: 1px;
+  padding-inline: 8px;
+  border-radius: var(--radius-row);
+  text-align: left;
+  contain: layout style;
+}
+.row::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  border-radius: inherit;
+  transition-property: box-shadow, background-color;
+  transition-duration: var(--speed-highlightFadeOut),
+    var(--speed-highlightFadeIn);
+  transition-timing-function: var(--ease-out-quad);
+}
+.row[data-active="true"]::before {
+  background: var(--row-applied-bg);
+}
+.row[data-keyboard-active="true"]::before {
+  box-shadow: 0 0 0 1px var(--row-keyboard-border) inset;
+}
+@media (any-hover: hover) and (any-pointer: fine) {
+  .row:not([data-active="true"]):hover::before {
+    background: var(--color-hover-bg);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .row::before {
+    transition: none;
+  }
+}
+
+.rowTile {
+  flex: none;
+  width: 32px;
+  height: 32px;
+  display: grid;
+  place-items: center;
+  border-radius: var(--radius-row);
+}
+
+.rowText {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.rowTitleLine {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+}
+.rowTitle {
+  flex: 1;
+  min-width: 0;
+  font-size: var(--font-size-small);
+  font-weight: var(--font-weight-medium);
+  color: var(--color-text-title);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.rowSnippet {
+  font-size: var(--font-size-mini);
+  color: var(--color-text-muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.rowTime {
+  flex: none;
+  min-width: 16px;
+  text-align: right;
+  font-size: var(--font-size-mini);
+  color: var(--color-text-muted);
+  font-variant-numeric: tabular-nums;
+}
+
+.listEmpty {
+  padding: 24px 16px;
+  font-size: var(--font-size-small);
+  color: var(--color-text-muted);
+  text-align: center;
+}
+
+/* ================= reading pane ================= */
+
+.readingPane {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.readingScroller {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  scrollbar-gutter: stable both-edges;
+  outline: none;
+}
+
+.readingColumn {
+  width: calc(100% - 80px);
+  max-width: 860px;
+  margin-inline: auto;
+  padding-top: 32px;
+  padding-bottom: 64px;
+}
+
+.readingEmpty {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  color: var(--color-text-muted);
+}
+.readingEmptyGlyph {
+  color: var(--color-text-faint);
+}
+.readingEmptyLabel {
+  font-size: var(--font-size-small);
+}
+
+/* ---------- selected-issue summary card ---------- */
+
+.summary {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  padding: 20px;
+  border-radius: var(--radius-card);
+  background: var(--color-bg-surface);
+  box-shadow: 0 0 0 var(--thin-pixel) var(--color-border-thin);
+}
+
+.summaryIdentifier {
+  font-size: var(--font-size-mini);
+  font-weight: var(--font-weight-medium);
+  color: var(--color-text-muted);
+  font-variant-numeric: tabular-nums;
+}
+
+.summaryTitle {
+  font-size: var(--font-size-large);
+  font-weight: var(--font-weight-medium);
+  color: var(--color-text-title);
+  align-self: flex-start;
+}
+.summaryTitle:hover {
+  text-decoration: underline;
+}
+
+.summaryDescription {
+  margin: 0;
+  font-size: var(--font-size-small);
+  line-height: 1.6;
+  color: var(--color-text-base);
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+.summaryMetaRow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: var(--font-size-small);
+  color: var(--color-text-muted);
+}
+.summaryMetaName {
+  font-weight: var(--font-weight-medium);
+  color: var(--color-text-base);
+}
+
+/* "Suggested team" chip row */
+.suggestedRow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: var(--font-size-small);
+  color: var(--color-text-muted);
+}
+.teamChip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 24px;
+  padding: 0 8px;
+  border-radius: var(--radius-rounded);
+  background: var(--color-bg-shade);
+  font-size: var(--font-size-mini);
+  font-weight: var(--font-weight-medium);
+  color: var(--color-text-base);
+}
+
+/* Anchors for the duplicate picker (invisible, under the toolbar). */
+.pickerAnchor {
+  position: absolute;
+  top: 56px;
+  right: 24px;
+  width: 0;
+  height: 0;
+  pointer-events: none;
+}

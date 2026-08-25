@@ -1,0 +1,234 @@
+/*
+ * FacetPanel — the floating insights overlay (MASTER_PROMPT.md §11.3 facet
+ * stage, reference screenshot anatomy). Unlike the docked §6.10 rails this
+ * panel FLOATS over the view: absolutely positioned against the content
+ * card (8px inset from its right/bottom edges, 8px below the header bands),
+ * so the list underneath never resizes.
+ *
+ * Tokens only; hover idiom = instant in (--speed-highlightFadeIn: 0s),
+ * .15s out, gated behind any-hover/any-pointer (§2.4); cursors stay default.
+ */
+
+.panel {
+  position: absolute;
+  /* Below the two 57px header bands (+ title hairline) + 8px breathing room.
+     One-band views override via the topOffset prop (inline `top`). */
+  top: calc(var(--header-height) * 2 + var(--thin-pixel) + 8px);
+  right: 8px;
+  bottom: 8px;
+  width: 320px;
+  /* Local stack: above the list rows, below the floating BulkBar (z 10);
+     dialogs/popovers portal to <body> at --z-overlay and stay on top. */
+  z-index: 5;
+
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+
+  background: var(--color-bg-surface);
+  border: var(--thin-pixel) solid var(--color-border-thin);
+  border-radius: var(--radius-panel);
+  box-shadow: var(--shadow-medium);
+  overflow: hidden;
+
+  /* Enter: fade + 8px slide-in (150ms ease-out-quad). */
+  animation: facetEnter var(--speed-highlightFadeOut) var(--ease-out-quad);
+}
+
+/* Exit: fade only (100ms), held on the final frame until unmount. */
+.panel[data-state="closing"] {
+  animation: facetExit var(--speed-quickTransition) var(--ease-out-quad)
+    forwards;
+  pointer-events: none;
+}
+
+@keyframes facetEnter {
+  from {
+    opacity: 0;
+    transform: translateX(8px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@keyframes facetExit {
+  to {
+    opacity: 0;
+  }
+}
+
+/* ---------- segmented pill tabs ---------- */
+
+.tabs {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 4px;
+  padding: 8px 8px 4px;
+  flex: none;
+}
+
+.tab {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  height: 28px;
+  min-width: 28px;
+  padding: 0 10px;
+  border-radius: var(--radius-rounded);
+  font-size: var(--font-size-mini);
+  font-weight: var(--font-weight-medium);
+  color: var(--color-text-muted);
+  white-space: nowrap;
+  transition-property: background-color, color;
+  transition-duration: var(--speed-highlightFadeOut);
+  transition-timing-function: var(--ease-out-quad);
+}
+
+@media (any-hover: hover) and (any-pointer: fine) {
+  .tab:hover {
+    background: var(--color-control-hover);
+    color: var(--color-text-base);
+    transition-duration: var(--speed-highlightFadeIn);
+  }
+}
+
+.tab[data-active="true"] {
+  background: var(--color-control-selected);
+  color: var(--color-text-title);
+}
+
+/* ---------- facet rows ---------- */
+
+.list {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  scrollbar-gutter: stable;
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  padding: 4px 8px 8px;
+}
+
+.row {
+  display: grid;
+  grid-template-columns: 16px minmax(0, 1fr) auto auto;
+  align-items: center;
+  column-gap: 8px;
+  height: 32px;
+  flex: none;
+  padding: 0 6px;
+  border-radius: 6px;
+  text-align: left;
+  transition-property: background-color;
+  transition-duration: var(--speed-highlightFadeOut);
+  transition-timing-function: var(--ease-out-quad);
+}
+
+@media (any-hover: hover) and (any-pointer: fine) {
+  button.row:hover {
+    background: var(--color-hover-bg);
+    transition-duration: var(--speed-highlightFadeIn);
+  }
+}
+
+.rowIcon {
+  display: inline-grid;
+  place-items: center;
+  width: 16px;
+  height: 16px;
+}
+
+.rowLabel {
+  min-width: 0;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  font-size: var(--font-size-small);
+  color: var(--color-text-base);
+}
+
+/* Hover-revealed "See issues" ghost affordance, left of the count. */
+.see {
+  font-size: var(--font-size-mini);
+  color: var(--color-text-muted);
+  white-space: nowrap;
+  opacity: 0;
+  transition-property: opacity;
+  transition-duration: var(--speed-highlightFadeOut);
+  transition-timing-function: var(--ease-out-quad);
+}
+
+@media (any-hover: hover) and (any-pointer: fine) {
+  button.row:hover .see {
+    opacity: 1;
+    transition-duration: var(--speed-highlightFadeIn);
+  }
+}
+
+/* The count itself is ALWAYS visible (reference screenshot). */
+.rowCount {
+  font-size: var(--font-size-mini);
+  font-variant-numeric: tabular-nums;
+  color: var(--color-text-muted);
+}
+
+/* 9px label-color dot (labels facet). */
+.labelDot {
+  width: 9px;
+  height: 9px;
+  border-radius: var(--radius-rounded);
+}
+.labelDot[data-none="true"] {
+  background: transparent;
+  box-shadow: inset 0 0 0 1px var(--color-text-faint);
+}
+
+.empty {
+  margin: 8px 6px;
+  font-size: var(--font-size-small);
+  line-height: 1.5;
+  color: var(--color-text-muted);
+}
+
+/* ---------- footer ---------- */
+
+.footer {
+  flex: none;
+  display: flex;
+  align-items: center;
+  padding: 8px 14px;
+  border-top: var(--thin-pixel) solid var(--color-border-thin);
+}
+
+.defaultBtn {
+  font-size: var(--font-size-mini);
+  font-weight: var(--font-weight-medium);
+  color: var(--color-accent);
+  transition-property: color;
+  transition-duration: var(--speed-highlightFadeOut);
+  transition-timing-function: var(--ease-out-quad);
+}
+
+@media (any-hover: hover) and (any-pointer: fine) {
+  .defaultBtn:hover {
+    color: var(--color-accent-hover);
+    transition-duration: var(--speed-highlightFadeIn);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .panel,
+  .panel[data-state="closing"] {
+    animation: none;
+  }
+  .tab,
+  .row,
+  .see,
+  .defaultBtn {
+    transition: none;
+  }
+}

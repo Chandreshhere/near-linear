@@ -1,0 +1,740 @@
+/*
+ * Inbox split view + welcome document.
+ * Geometry CAPTURED from docs/analysis/capture-welcome-to-linear.md
+ * (§1 frame numbers, §6 component anatomy, §10 type ramp) and
+ * MASTER_PROMPT.md §10.4. Tokens only — no literal colors.
+ */
+
+/* ================================================================
+ * Split container
+ * ================================================================ */
+
+.split {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  align-items: stretch;
+}
+
+/* List pane: 400px default, flex-none, right hairline, resizable. */
+.listPane {
+  position: relative;
+  flex: none;
+  width: var(--inbox-list-width, 400px);
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  border-right: var(--thin-pixel) solid var(--color-border-thin);
+  container-type: inline-size;
+}
+
+/* 7px col-resize hit area on the pane's right edge (sidebar handle idiom). */
+.resizeHandle {
+  position: absolute;
+  right: -5px;
+  top: 14px;
+  bottom: 40px;
+  width: 7px;
+  cursor: col-resize;
+  z-index: var(--z-resize-handle);
+}
+.resizeHandle::after {
+  content: "";
+  position: absolute;
+  left: 3px;
+  top: 0;
+  bottom: 0;
+  width: 1px;
+  opacity: 0;
+  background: linear-gradient(
+    to bottom,
+    lch(100% 0 272 / 0) 0%,
+    lch(100% 0 272 / 0.5) 15%,
+    lch(100% 0 272 / 0.65) 50%,
+    lch(100% 0 272 / 0.5) 85%,
+    lch(100% 0 272 / 0) 100%
+  );
+  transition: opacity var(--speed-highlightFadeOut) var(--ease-out-quad);
+}
+.resizeHandle:hover::after,
+.resizeHandle[data-resizing="true"]::after {
+  opacity: 1;
+}
+
+/* ================================================================
+ * Notification list
+ * ================================================================ */
+
+.listScroller {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding-top: 8px;
+  padding-bottom: max(8px, env(safe-area-inset-bottom));
+  padding-inline: 8px;
+  outline: none;
+}
+
+/* Row: 55px, r8, margin-block 1px, padding-inline 8 (capture §6). */
+.row {
+  position: relative;
+  isolation: isolate;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  height: 55px;
+  margin-block: 1px;
+  padding-inline: 8px;
+  border-radius: var(--radius-row);
+  contain: layout style;
+}
+/* Background/ring painted on ::before so the row content never shifts. */
+.row::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  border-radius: inherit;
+  /* hover idiom: background snaps in, fades out over 150ms */
+  transition-property: box-shadow, background-color;
+  transition-duration: var(--speed-highlightFadeOut),
+    var(--speed-highlightFadeIn);
+  transition-timing-function: var(--ease-out-quad);
+}
+.row[data-active="true"]::before {
+  background: var(--row-applied-bg);
+}
+.row[data-keyboard-active="true"]::before {
+  box-shadow: 0 0 0 1px var(--row-keyboard-border) inset;
+}
+@media (any-hover: hover) and (any-pointer: fine) {
+  .row:not([data-active="true"]):hover::before {
+    background: var(--color-hover-bg);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .row::before {
+    transition: none;
+  }
+}
+
+/* 6px unread dot in the list gutter, at the row's left edge. */
+.unreadDot {
+  position: absolute;
+  left: -6px;
+  top: 50%;
+  width: 6px;
+  height: 6px;
+  margin-top: -3px;
+  border-radius: 50%;
+  background: var(--color-accent);
+}
+
+/* 32px icon tile (logo mark for the welcome row, status glyph otherwise). */
+.rowTile {
+  flex: none;
+  width: 32px;
+  height: 32px;
+  display: grid;
+  place-items: center;
+  border-radius: var(--radius-row);
+}
+.rowTileMark {
+  background: var(--color-bg-shade);
+  color: var(--color-text-muted);
+}
+
+.rowText {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.rowTitleLine {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+}
+.rowTitle {
+  flex: 1;
+  min-width: 0;
+  font-size: var(--font-size-small);
+  font-weight: var(--font-weight-medium);
+  color: var(--color-text-base);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.row[data-unread="true"] .rowTitle {
+  color: var(--color-text-title);
+}
+.rowSnippet {
+  font-size: var(--font-size-mini);
+  font-weight: var(--font-weight-normal);
+  color: var(--color-text-muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.rowTime {
+  flex: none;
+  min-width: 16px;
+  text-align: right;
+  font-size: var(--font-size-mini);
+  font-weight: var(--font-weight-normal);
+  color: var(--color-text-muted);
+  font-variant-numeric: tabular-nums;
+}
+
+.listEmpty {
+  padding: 24px 16px;
+  font-size: var(--font-size-small);
+  color: var(--color-text-muted);
+  text-align: center;
+}
+
+/* ================================================================
+ * Reading pane
+ * ================================================================ */
+
+.readingPane {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Top-bar left slot: min-width 38% (capture §1). */
+.topBarLeft {
+  min-width: 38%;
+}
+
+.readingScroller {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  scrollbar-gutter: stable both-edges;
+  outline: none;
+}
+
+.readingColumn {
+  width: calc(100% - 80px);
+  max-width: 860px;
+  margin-inline: auto;
+  padding-top: 32px;
+  padding-bottom: 64px;
+}
+
+.readingEmpty {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  color: var(--color-text-muted);
+}
+.readingEmptyGlyph {
+  color: var(--color-text-faint);
+}
+.readingEmptyLabel {
+  font-size: var(--font-size-small);
+  color: var(--color-text-muted);
+}
+
+/* ---------- issue notification summary ---------- */
+
+.issueCard {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 20px;
+  border-radius: var(--radius-card);
+  background: var(--color-bg-surface);
+  box-shadow: 0 0 0 var(--thin-pixel) var(--color-border-thin);
+}
+.issueIdentifier {
+  font-size: var(--font-size-mini);
+  font-weight: var(--font-weight-medium);
+  color: var(--color-text-muted);
+  font-variant-numeric: tabular-nums;
+}
+.issueTitle {
+  font-size: var(--font-size-large);
+  font-weight: var(--font-weight-medium);
+  color: var(--color-text-title);
+}
+.issueTitle:hover {
+  text-decoration: underline;
+}
+.issueMeta {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: var(--font-size-small);
+  color: var(--color-text-muted);
+}
+.issueStatus {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--color-text-base);
+}
+.issueActor {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: var(--font-size-small);
+  color: var(--color-text-muted);
+}
+.issueActorName {
+  font-weight: var(--font-weight-medium);
+  color: var(--color-text-base);
+}
+
+/* ================================================================
+ * Welcome document (read-only rich text)
+ * ================================================================ */
+
+.doc {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.docTile {
+  width: 44px;
+  height: 44px;
+  display: grid;
+  place-items: center;
+  border-radius: var(--radius-panel);
+  background: var(--color-bg-shade);
+  color: var(--color-text-muted);
+}
+
+/* Page title: 2.25rem / 2.875rem (capture §10 type ramp). */
+.docTitle {
+  display: block;
+  font-size: var(--font-size-title1);
+  line-height: 2.875rem;
+  font-weight: var(--font-weight-medium);
+  color: var(--color-text-title);
+  letter-spacing: -0.012em;
+}
+
+.docBody {
+  /* editor token block, mapped onto semantic tokens (capture §10) */
+  --doc-font-size: var(--font-size-regular); /* 15px */
+  --doc-line-height: 1.6;
+  --doc-block-spacing: 1rem;
+  --doc-inline-code-bg: color-mix(
+    in srgb,
+    var(--color-text-title) 7.5%,
+    transparent
+  );
+
+  font-size: var(--doc-font-size);
+  line-height: var(--doc-line-height);
+  letter-spacing: -0.00666667em;
+  color: var(--color-text-base);
+  padding-left: 15px;
+  padding-right: 12px;
+}
+.docBody > * + * {
+  margin-top: var(--doc-block-spacing);
+}
+
+.docHeading {
+  font-size: 1.0625rem;
+  line-height: 1.5rem;
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-text-title);
+}
+.docBody > .docHeading {
+  margin-top: calc(var(--doc-block-spacing) * 2);
+}
+
+.docList {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.docListItem {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.docLink {
+  color: var(--color-link);
+  align-self: flex-start;
+  text-align: left;
+  padding: 0;
+}
+.docLink:hover {
+  text-decoration: underline;
+}
+.docLinkDesc {
+  color: var(--color-text-muted);
+}
+
+.docCode {
+  font-family: var(--font-monospace);
+  font-size: 0.875em;
+  padding: 1px 5px;
+  border-radius: var(--control-border-radius);
+  background: var(--doc-inline-code-bg);
+  color: var(--color-text-title);
+}
+
+.docRule {
+  border: none;
+  border-top: var(--thin-pixel) solid var(--color-border-thin);
+  margin-block: calc(var(--doc-block-spacing) * 1.5);
+}
+
+/* ================================================================
+ * Media player placeholder (capture §6 "Orbiter" anatomy)
+ * ================================================================ */
+
+.player {
+  position: relative;
+  aspect-ratio: 16 / 9;
+  border-radius: var(--editor-block-radius);
+  overflow: hidden;
+  background: var(--color-bg-shade);
+  box-shadow: 0 0 0 var(--thin-pixel) var(--color-border-thin);
+}
+
+.playerStage {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+}
+.playerPoster {
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(
+    120% 90% at 50% 35%,
+    var(--color-bg-focus) 0%,
+    var(--color-bg-sub) 100%
+  );
+}
+.playerBigPlay {
+  position: relative;
+  width: 56px;
+  height: 56px;
+  display: grid;
+  place-items: center;
+  border-radius: var(--radius-rounded);
+  background: color-mix(in srgb, var(--color-bg-sub) 70%, transparent);
+  box-shadow: 0 0 0 var(--thin-pixel) var(--color-border-hover);
+  color: var(--color-text-title);
+  --icon-replacement-color: var(--color-text-title);
+  transition: background-color var(--speed-highlightFadeOut)
+    var(--ease-out-quad);
+}
+.playerBigPlay:hover {
+  background: color-mix(in srgb, var(--color-bg-sub) 90%, transparent);
+}
+
+/* control bar */
+.playerBar {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  height: 40px;
+  padding-inline: 8px;
+  background: color-mix(in srgb, var(--color-bg-sub) 82%, transparent);
+  backdrop-filter: blur(8px);
+}
+
+.playerBtn {
+  flex: none;
+  width: 24px;
+  height: 24px;
+  display: grid;
+  place-items: center;
+  border-radius: var(--radius-rounded);
+  color: var(--color-text-title);
+  --icon-replacement-color: var(--color-text-title);
+  transition: background-color var(--speed-highlightFadeOut)
+    var(--ease-out-quad);
+}
+.playerBtn:hover {
+  background: var(--color-control-hover);
+}
+.playerBtn[aria-disabled="true"] {
+  opacity: 0.7;
+}
+
+.playerTime {
+  flex: none;
+  min-width: 36px;
+  font-size: var(--font-size-micro);
+  font-variant-numeric: tabular-nums;
+  color: var(--color-text-title);
+}
+
+/* seek slider: buffered + played range bars driven by custom properties */
+.playerSeek {
+  position: relative;
+  flex: 1;
+  min-width: 40px;
+  height: 4px;
+  border-radius: var(--radius-rounded);
+  background: color-mix(in srgb, var(--color-text-title) 18%, transparent);
+}
+.playerRange {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: var(--media-player-range-start, 0%);
+  right: calc(100% - var(--media-player-range-end, 0%));
+  border-radius: inherit;
+}
+.playerRange[data-type="buffered"] {
+  background: color-mix(in srgb, var(--color-text-title) 32%, transparent);
+}
+.playerRange[data-type="played"] {
+  background: var(--color-accent);
+}
+.playerThumb {
+  position: absolute;
+  top: 50%;
+  left: var(--media-player-thumb-start, 0%);
+  width: 10px;
+  height: 10px;
+  margin-top: -5px;
+  margin-left: -5px;
+  border-radius: 50%;
+  background: var(--color-text-title);
+}
+
+.playerRate {
+  flex: none;
+  height: 22px;
+  padding-inline: 4px;
+  border-radius: var(--control-border-radius);
+  font-size: var(--font-size-micro);
+  font-weight: var(--font-weight-medium);
+  color: var(--color-text-title);
+  background: transparent;
+}
+.playerRate:disabled {
+  opacity: 0.7;
+}
+
+/* ================================================================
+ * Quick filter (§11.2 Cmd/Ctrl+F) — a temporary bar under the header
+ * ================================================================ */
+.quickFilter {
+  flex: none;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  height: 36px;
+  padding: 0 10px;
+  border-bottom: var(--thin-pixel) solid var(--color-border-thin);
+  color: var(--icon-default-color);
+}
+
+.quickFilterInput {
+  flex: 1;
+  min-width: 0;
+  border: 0;
+  background: transparent;
+  outline: none;
+  font-size: var(--font-size-small);
+  color: var(--color-text-base);
+}
+.quickFilterInput::placeholder {
+  color: var(--color-text-faint);
+}
+
+.quickFilterClose {
+  flex: none;
+  width: 20px;
+  height: 20px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--control-border-radius);
+  color: var(--color-text-muted);
+  transition: background-color var(--speed-highlightFadeOut) var(--ease-out-quad);
+}
+@media (any-hover: hover) and (any-pointer: fine) {
+  .quickFilterClose:hover {
+    background: var(--color-control-hover);
+    color: var(--color-text-base);
+    transition-duration: var(--speed-highlightFadeIn);
+  }
+}
+
+/* Snoozed marker on a row (only visible while "Show snoozed" is on). */
+.rowSnoozeBadge {
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  color: var(--color-text-faint);
+}
+
+/* ================================================================
+ * Filter menu surface (§11.2)
+ * ================================================================ */
+.filterMenu {
+  min-width: 220px;
+  padding: 4px;
+  background: var(--color-bg-elevated);
+  border: 1px solid var(--color-border-solid);
+  border-radius: 8px;
+  box-shadow: var(--shadow-medium);
+  z-index: var(--z-overlay);
+  outline: none;
+}
+
+.filterSectionLabel {
+  height: 24px;
+  display: flex;
+  align-items: center;
+  padding: 0 8px;
+  font-size: var(--font-size-micro);
+  font-weight: var(--font-weight-medium);
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  color: var(--color-text-faint);
+}
+
+.filterRow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  height: 28px;
+  padding: 0 8px;
+  border-radius: var(--control-border-radius);
+  font-size: var(--font-size-small);
+  color: var(--color-text-base);
+  text-align: left;
+  transition: background-color var(--speed-highlightFadeOut) var(--ease-out-quad);
+}
+@media (any-hover: hover) and (any-pointer: fine) {
+  .filterRow:hover {
+    background: var(--color-hover-bg);
+    transition-duration: var(--speed-highlightFadeIn);
+  }
+}
+
+.filterCheck {
+  flex: none;
+  width: 14px;
+  height: 14px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid var(--color-border-hover);
+  border-radius: 3px;
+  color: transparent;
+}
+.filterCheck[data-checked="true"] {
+  background: var(--color-accent);
+  border-color: var(--color-accent);
+  color: var(--color-text-title);
+}
+
+.filterRowLabel {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.filterFooter {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 4px;
+  padding-top: 4px;
+  border-top: var(--thin-pixel) solid var(--color-border-thin);
+}
+
+/* Small text button used in the filter/display footers. */
+.linkButton {
+  height: 24px;
+  padding: 0 8px;
+  border-radius: var(--control-border-radius);
+  font-size: var(--font-size-mini);
+  font-weight: var(--font-weight-medium);
+  color: var(--color-text-muted);
+  transition:
+    background-color var(--speed-highlightFadeOut) var(--ease-out-quad),
+    color var(--speed-highlightFadeOut) var(--ease-out-quad);
+}
+@media (any-hover: hover) and (any-pointer: fine) {
+  .linkButton:hover {
+    background: var(--color-control-hover);
+    color: var(--color-text-base);
+    transition-duration: var(--speed-highlightFadeIn);
+  }
+}
+
+/* ================================================================
+ * Welcome-document resource dialog (§10.4)
+ * ================================================================ */
+.resourceDialog {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 20px;
+}
+
+.resourceTitle {
+  margin: 0;
+  font-size: var(--font-size-regular);
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-text-title);
+}
+
+.resourceBody {
+  margin: 0;
+  font-size: var(--font-size-small);
+  line-height: 1.55;
+  color: var(--color-text-muted);
+}
+
+.resourceTarget {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 4px;
+  padding: 8px 10px;
+  border: 1px solid var(--color-border-thin);
+  border-radius: var(--radius-row);
+  background: var(--color-bg-surface);
+  font-family: var(--font-monospace);
+  font-size: var(--font-size-mini);
+  color: var(--color-text-base);
+  word-break: break-all;
+}
+
+.resourceActions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .quickFilterClose,
+  .filterRow,
+  .linkButton {
+    transition: none;
+  }
+}

@@ -1,0 +1,59 @@
+/*
+ * Tooltip surface — MASTER_PROMPT.md §6.4 (CAPTURED).
+ * Small elevated panel: hairline solid border, radius 6, shadow-low,
+ * 12px/500 label + optional keycap chips; enter fade + drop 2px 120ms
+ * ease-out-quad, exit fade 100ms. Never receives pointer events.
+ */
+
+.content {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 8px;
+  background: var(--color-bg-elevated);
+  border: 1px solid var(--color-border-solid);
+  border-radius: 6px;
+  box-shadow: var(--shadow-low);
+  font-size: var(--font-size-mini);
+  font-weight: var(--font-weight-medium);
+  color: var(--color-text-base);
+  white-space: nowrap;
+  z-index: var(--z-overlay-2);
+  pointer-events: none;
+  user-select: none;
+}
+
+.content[data-state="delayed-open"],
+.content[data-state="instant-open"] {
+  animation: tooltipEnter 120ms var(--ease-out-quad);
+}
+.content[data-state="closed"] {
+  animation: tooltipExit 100ms var(--ease-out-quad) forwards;
+}
+
+@keyframes tooltipEnter {
+  from {
+    opacity: 0;
+    transform: translateY(-2px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+@keyframes tooltipExit {
+  from {
+    opacity: 1;
+  }
+  to {
+    opacity: 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .content[data-state="delayed-open"],
+  .content[data-state="instant-open"],
+  .content[data-state="closed"] {
+    animation: none;
+  }
+}

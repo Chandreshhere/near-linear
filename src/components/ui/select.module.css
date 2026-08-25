@@ -1,0 +1,146 @@
+/*
+ * Select — trigger styled like small chrome (§7.1 secondary: elevated bg,
+ * ring shadow instead of a real border); content reuses the captured menu
+ * surface contract (§6.2–6.3): elevated panel, hairline solid border,
+ * radius 8, shadow-medium, padding 4, min-width 180.
+ */
+
+/* ---------- trigger ---------- */
+.trigger {
+  display: inline-flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px;
+  height: 28px;
+  min-width: 120px;
+  padding: 0 8px 0 10px;
+  border-radius: var(--control-border-radius);
+  background: var(--color-bg-elevated);
+  box-shadow: 0 0 0 1px var(--color-border-solid), var(--shadow-low);
+  font-size: var(--font-size-small);
+  font-weight: var(--font-weight-medium);
+  color: var(--color-text-base);
+  white-space: nowrap;
+  transition-property: box-shadow, color;
+  transition-duration: var(--speed-highlightFadeOut);
+  transition-timing-function: var(--ease-out-quad);
+}
+@media (any-hover: hover) and (any-pointer: fine) {
+  .trigger:not(:disabled):hover {
+    transition-duration: var(--speed-highlightFadeIn);
+    box-shadow: 0 0 0 1px var(--color-border-hover), var(--shadow-low);
+  }
+}
+.trigger[data-state="open"] {
+  box-shadow: 0 0 0 1px var(--color-border-hover), var(--shadow-low);
+}
+.trigger:disabled {
+  opacity: 0.6;
+}
+.trigger [data-placeholder] {
+  color: var(--color-text-muted);
+}
+
+.triggerValue {
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.triggerChevron {
+  flex-shrink: 0;
+  display: grid;
+  place-items: center;
+  color: var(--color-text-muted);
+}
+
+/* ---------- content (menu surface) ---------- */
+.content {
+  background: var(--color-bg-elevated);
+  border: 1px solid var(--color-border-solid);
+  border-radius: 8px;
+  box-shadow: var(--shadow-medium);
+  padding: 4px;
+  min-width: var(--radix-select-trigger-width, 180px);
+  z-index: var(--z-overlay);
+  outline: none;
+  max-height: var(--radix-select-content-available-height, 80vh);
+  overflow-y: auto;
+  overflow-x: hidden;
+}
+
+.content[data-state="open"] {
+  animation: selectEnter 120ms var(--ease-out-quad);
+}
+.content[data-state="closed"] {
+  animation: selectExit 100ms var(--ease-out-quad) forwards;
+}
+
+@keyframes selectEnter {
+  from {
+    opacity: 0;
+    transform: translateY(-2px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+@keyframes selectExit {
+  from {
+    opacity: 1;
+  }
+  to {
+    opacity: 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .content[data-state="open"],
+  .content[data-state="closed"] {
+    animation: none;
+  }
+}
+
+/* ---------- item (menu-item geometry + trailing check) ---------- */
+.item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  height: 28px;
+  padding: 0 8px;
+  border-radius: var(--control-border-radius);
+  font-size: var(--font-size-small);
+  font-weight: var(--font-weight-normal);
+  color: var(--color-text-base);
+  white-space: nowrap;
+  user-select: none;
+  outline: none;
+  transition-property: background-color, color;
+  transition-duration: var(--speed-highlightFadeOut);
+  transition-timing-function: var(--ease-out-quad);
+}
+.item[data-highlighted] {
+  background: var(--color-hover-bg);
+  transition-duration: var(--speed-highlightFadeIn);
+}
+.item[data-disabled] {
+  color: var(--color-text-faint);
+  pointer-events: none;
+}
+
+.itemLabel {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.itemCheck {
+  flex-shrink: 0;
+  margin-left: auto;
+  display: grid;
+  place-items: center;
+  width: 16px;
+  height: 16px;
+  color: var(--color-text-muted);
+}

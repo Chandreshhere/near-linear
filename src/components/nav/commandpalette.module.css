@@ -1,0 +1,273 @@
+/*
+ * Command palette / workspace search surface — MASTER_PROMPT.md §13, §7.6.
+ *
+ * Top-anchored centered dialog (15vh) instead of the vertically-centred
+ * ui/Dialog geometry, so the enter/exit vocabulary is re-stated here rather
+ * than inherited: fade + 2px drop + scale .98->1 over 150ms ease-out-quad,
+ * exit fade 100ms (§6.6) — identical timing to dialog.module.css.
+ *
+ * Row highlight follows THE HOVER IDIOM (§2.4): at rest the fade-out speed,
+ * instant on highlight. Pointer hover and the ↑/↓ keyboard cursor are one
+ * state (`data-active`), re-pointed by mouseenter — never two highlights.
+ */
+
+/* ---------- overlay ---------- */
+
+.overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.4);
+  z-index: var(--z-overlay);
+}
+.overlay[data-state="open"] {
+  animation: paletteOverlayIn 0.15s var(--ease-out-quad);
+}
+.overlay[data-state="closed"] {
+  animation: paletteOverlayOut 0.1s var(--ease-out-quad) forwards;
+}
+
+/* ---------- surface ---------- */
+
+.content {
+  position: fixed;
+  top: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  margin-top: 15vh;
+  width: 640px;
+  max-width: calc(100vw - 32px);
+  max-height: calc(100vh - 15vh - 32px);
+  display: flex;
+  flex-direction: column;
+  background: var(--color-bg-elevated);
+  border: 1px solid var(--color-border-thin);
+  border-radius: var(--radius-panel); /* 12 */
+  box-shadow: var(--shadow-medium);
+  overflow: hidden;
+  z-index: var(--z-overlay-2);
+  outline: none;
+}
+.content[data-state="open"] {
+  animation: paletteIn 0.15s var(--ease-out-quad);
+}
+.content[data-state="closed"] {
+  animation: paletteOut 0.1s var(--ease-out-quad) forwards;
+}
+
+/* ---------- input row (48px, hairline bottom border) ---------- */
+
+.inputRow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex: none;
+  height: 48px;
+  padding: 0 14px;
+  border-bottom: 1px solid var(--color-border-thin);
+}
+
+.inputIcon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex: none;
+  width: 16px;
+  height: 16px;
+  color: var(--color-text-muted);
+  --icon-replacement-color: var(--color-text-muted);
+}
+
+/* sub-list context token ("Change status") — reads like a scoped search */
+.contextChip {
+  display: inline-flex;
+  align-items: center;
+  flex: none;
+  height: 22px;
+  padding: 0 8px;
+  border-radius: var(--control-border-radius);
+  background: var(--color-bg-shade);
+  color: var(--color-text-base);
+  font-size: var(--font-size-mini); /* 12 */
+  font-weight: var(--font-weight-medium);
+  white-space: nowrap;
+}
+
+.input {
+  appearance: none;
+  flex: 1 1 auto;
+  min-width: 0;
+  margin: 0;
+  padding: 0;
+  background: transparent;
+  border: none;
+  border-radius: 0;
+  color: var(--color-text-base);
+  font-family: var(--font-regular);
+  font-size: var(--font-size-regular); /* 15 */
+  font-weight: var(--font-weight-normal);
+  line-height: 20px;
+  outline: none;
+  user-select: text;
+}
+.input::placeholder {
+  color: var(--color-text-faint);
+  opacity: 1;
+}
+.input::selection {
+  background: var(--selection-bg);
+}
+.input:focus,
+.input:focus-visible {
+  outline: none;
+}
+
+/* ---------- results ---------- */
+
+.list {
+  flex: 1 1 auto;
+  min-height: 0;
+  max-height: 420px;
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding: 4px;
+  overscroll-behavior: contain;
+}
+
+.group + .group {
+  margin-top: 2px;
+}
+
+.groupHeading {
+  display: flex;
+  align-items: center;
+  height: 26px;
+  padding: 0 8px;
+  font-size: var(--font-size-micro); /* 11 */
+  font-weight: var(--font-weight-medium); /* 500 */
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--color-text-muted);
+  user-select: none;
+}
+
+.row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  height: 36px;
+  padding: 0 8px;
+  border-radius: 6px; /* palette row radius (§13 surface spec) */
+  font-size: var(--font-size-small); /* 13 */
+  font-weight: var(--font-weight-normal);
+  color: var(--color-text-base);
+  white-space: nowrap;
+  user-select: none;
+  cursor: var(--pointer); /* default arrow — cursor policy §2.5 */
+  outline: none;
+  transition-property: background-color, color;
+  transition-duration: var(--speed-highlightFadeOut);
+  transition-timing-function: var(--ease-out-quad);
+}
+
+/* one highlight for both the pointer and the keyboard cursor */
+.row[data-active="true"] {
+  background: var(--color-hover-bg);
+  transition-duration: var(--speed-highlightFadeIn);
+  --icon-replacement-color: var(--color-text-base);
+}
+
+.rowIcon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex: none;
+  width: 16px;
+  height: 16px;
+  color: var(--color-text-muted);
+}
+
+.rowLabel {
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.rowHint {
+  flex: none;
+  max-width: 45%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  font-size: var(--font-size-mini); /* 12 */
+  color: var(--color-text-muted);
+  font-variant-numeric: tabular-nums;
+}
+
+.rowKeys {
+  display: flex;
+  align-items: center;
+  flex: none;
+}
+
+.labelDot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex: none;
+}
+
+.empty {
+  display: flex;
+  align-items: center;
+  height: 36px;
+  padding: 0 8px;
+  font-size: var(--font-size-small);
+  color: var(--color-text-muted);
+}
+
+/* ---------- motion ---------- */
+
+@keyframes paletteOverlayIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+@keyframes paletteOverlayOut {
+  from {
+    opacity: 1;
+  }
+  to {
+    opacity: 0;
+  }
+}
+@keyframes paletteIn {
+  from {
+    opacity: 0;
+    transform: translateX(-50%) translateY(-2px) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0) scale(1);
+  }
+}
+@keyframes paletteOut {
+  from {
+    opacity: 1;
+  }
+  to {
+    opacity: 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .overlay,
+  .content {
+    animation: none;
+  }
+  .row {
+    transition-duration: 0s;
+  }
+}

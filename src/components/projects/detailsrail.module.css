@@ -1,0 +1,500 @@
+/*
+ * Project details rail — capture §1 (right panel geometry) + §6.8 (cards),
+ * MASTER_PROMPT.md §7.8/§10.2. Width 400px, slides to 0; cards are
+ * hairline/r10/elevated/shadow-low/p12; property label column 90px;
+ * milestone rows h42; synthesized activity entries. Tokens only.
+ */
+
+/* ---------------------------------------------------------- wrapper/edge */
+
+.wrapper {
+  position: relative;
+  flex: none;
+  width: 400px;
+  z-index: 90;
+  overflow: hidden;
+  transition: width var(--speed-regularTransition) var(--ease-out-quad);
+}
+.wrapper[data-open="false"] {
+  width: 0;
+}
+
+/* Soft left boundary: surface at the panel edge fading out over 12px. */
+.edge {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  width: 12px;
+  z-index: 1;
+  pointer-events: none;
+  background-image: linear-gradient(to left, var(--color-bg-surface), transparent);
+}
+
+.aside {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  right: 0;
+  width: 400px;
+  display: flex;
+  flex-direction: column;
+  overflow-y: auto;
+  overflow-x: hidden;
+  scrollbar-gutter: stable;
+  padding: 8px 8px 8px 0;
+  background-color: inherit;
+}
+
+/* ------------------------------------------------------------- cards §7.8 */
+
+.card {
+  flex: none;
+  border: 1px solid var(--color-border-thin);
+  border-radius: var(--radius-card);
+  background-color: var(--color-bg-elevated);
+  box-shadow: var(--shadow-low);
+  padding: 12px;
+  margin-bottom: 8px;
+}
+
+.cardHeader {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  height: 16px;
+}
+
+.cardTitle {
+  font-size: var(--font-size-small);
+  font-weight: var(--font-weight-medium);
+  color: var(--color-text-muted);
+  white-space: nowrap;
+}
+
+.spacer {
+  flex: 1;
+  min-width: 0;
+}
+
+/* Header icon actions keep the 16px row height (buttons overflow evenly). */
+.headerAction {
+  margin: -4px 0;
+  color: var(--icon-default-color);
+}
+
+/* Collapse chevron — role=button, revealed on card hover (§6.1 idiom). */
+.collapse {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 16px;
+  height: 16px;
+  margin-left: -2px;
+  border-radius: 4px;
+  color: var(--icon-default-color);
+}
+.collapseChevron {
+  transition:
+    opacity var(--speed-highlightFadeOut) var(--ease-out-quad),
+    transform var(--speed-quickTransition) var(--ease-out-quad);
+}
+.collapse[aria-expanded="false"] .collapseChevron {
+  transform: rotate(-90deg);
+}
+@media (any-hover: hover) and (any-pointer: fine) {
+  .collapseChevron,
+  .headerAction {
+    opacity: 0;
+    transition: opacity var(--speed-highlightFadeOut) var(--ease-out-quad);
+  }
+  .card:hover .collapseChevron,
+  .card:hover .headerAction {
+    opacity: 1;
+    transition-duration: var(--speed-highlightFadeIn);
+  }
+}
+.collapse:focus-visible .collapseChevron,
+.collapse[aria-expanded="false"] .collapseChevron,
+.headerAction:focus-visible,
+.headerAction[data-menu-open="true"] {
+  opacity: 1;
+}
+
+/* Collapsible body (height/opacity pattern shared with the sidebar). */
+.cardBody {
+  overflow: hidden;
+  transition:
+    height var(--speed-quickTransition) var(--ease-out-quad),
+    opacity var(--speed-quickTransition) var(--ease-out-quad);
+}
+
+/* ------------------------------------------------------ properties rows */
+
+.propRow {
+  display: flex;
+  align-items: center;
+  min-height: 28px;
+}
+.propRow:first-child {
+  margin-top: 8px;
+}
+
+/* Label cell — WIDTH 90px, 12px/450 muted (capture §6.8). */
+.propLabel {
+  flex: none;
+  width: 90px;
+  font-size: var(--font-size-mini);
+  font-weight: var(--font-weight-normal);
+  color: var(--color-text-muted);
+}
+
+.propValue {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+}
+
+/* Property button — min-height 28, r6, padding 3/6, 12.5px (§10.2). */
+.propButton {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 28px;
+  max-width: 100%;
+  padding: 3px 6px;
+  border-radius: 6px;
+  font-size: 0.78125rem; /* 12.5px */
+  font-weight: var(--font-weight-medium);
+  color: var(--color-text-base);
+  transition-property: background-color, color;
+  transition-duration: var(--speed-highlightFadeOut);
+  transition-timing-function: var(--ease-out-quad);
+}
+@media (any-hover: hover) and (any-pointer: fine) {
+  .propButton:hover {
+    transition-duration: var(--speed-highlightFadeIn);
+    background: var(--color-hover-bg);
+  }
+}
+.propButton:active,
+.propButton[data-menu-open="true"] {
+  transition-duration: var(--speed-highlightFadeIn);
+  background: var(--color-control-selected);
+}
+
+.propIcon {
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--icon-default-color);
+}
+
+.propText {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.propMuted {
+  color: var(--color-text-muted);
+}
+
+/* Dates value: chip → arrow → chip (12px). */
+.dates {
+  display: flex;
+  align-items: center;
+  min-width: 0;
+}
+.dateChip {
+  font-size: var(--font-size-mini);
+}
+.dateArrow {
+  flex: none;
+  display: inline-flex;
+  margin: 0 2px;
+  color: var(--color-text-faint);
+}
+
+/* Hover-revealed "+ Add label" (§6.8: value appears on card hover). */
+@media (any-hover: hover) and (any-pointer: fine) {
+  .hoverOnly {
+    opacity: 0;
+    transition:
+      opacity var(--speed-highlightFadeOut) var(--ease-out-quad),
+      background-color var(--speed-highlightFadeOut) var(--ease-out-quad);
+  }
+  .card:hover .hoverOnly {
+    opacity: 1;
+    transition-duration: var(--speed-highlightFadeIn);
+  }
+}
+.hoverOnly:focus-visible {
+  opacity: 1;
+}
+
+/* ------------------------------------------------------- milestone rows */
+
+.milestoneRow,
+.noMilestoneRow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  height: 42px;
+  padding: 0 6px;
+  border-radius: 6px;
+  transition: background-color var(--speed-highlightFadeOut) var(--ease-out-quad);
+}
+.milestoneRow:first-child,
+.noMilestoneRow:first-child {
+  margin-top: 8px;
+}
+@media (any-hover: hover) and (any-pointer: fine) {
+  .milestoneRow:hover {
+    transition-duration: var(--speed-highlightFadeIn);
+    background: var(--color-hover-bg);
+  }
+}
+
+.msName {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.msIcon {
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 16px;
+  height: 16px;
+  color: var(--icon-default-color);
+}
+
+.msNameText {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: var(--font-size-small);
+  font-weight: var(--font-weight-medium);
+  color: var(--color-text-base);
+}
+
+.msPercent {
+  flex: none;
+  display: inline-flex;
+  align-items: baseline;
+  gap: 4px;
+  font-size: var(--font-size-mini);
+}
+.msPct {
+  color: var(--color-text-muted);
+  font-variant-numeric: tabular-nums;
+}
+.msOf {
+  color: var(--color-text-faint);
+}
+.msCount {
+  color: var(--color-text-muted);
+  font-variant-numeric: tabular-nums;
+}
+
+.msDate {
+  flex: none;
+  padding: 2px 4px;
+  border-radius: 4px;
+  font-size: var(--font-size-mini);
+  color: var(--color-text-muted);
+  white-space: nowrap;
+  transition: background-color var(--speed-highlightFadeOut) var(--ease-out-quad);
+}
+@media (any-hover: hover) and (any-pointer: fine) {
+  .msDate:hover {
+    transition-duration: var(--speed-highlightFadeIn);
+    background: var(--color-control-hover);
+  }
+}
+
+/* Hover ⋯ actions (kept visible while its menu is open — §6.2). */
+.msActions {
+  flex: none;
+  color: var(--icon-default-color);
+}
+@media (any-hover: hover) and (any-pointer: fine) {
+  .msActions {
+    opacity: 0;
+    transition: opacity var(--speed-highlightFadeOut) var(--ease-out-quad);
+  }
+  .milestoneRow:hover .msActions {
+    opacity: 1;
+    transition-duration: var(--speed-highlightFadeIn);
+  }
+}
+.msActions:focus-visible,
+.msActions[data-menu-open="true"] {
+  opacity: 1;
+}
+
+.noMilestoneText {
+  font-size: var(--font-size-small);
+  color: var(--color-text-muted);
+  white-space: nowrap;
+}
+
+.ghostLink {
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  min-height: 24px;
+  padding: 2px 6px;
+  border-radius: 6px;
+  font-size: var(--font-size-mini);
+  font-weight: var(--font-weight-medium);
+  color: var(--color-text-muted);
+  transition:
+    background-color var(--speed-highlightFadeOut) var(--ease-out-quad),
+    color var(--speed-highlightFadeOut) var(--ease-out-quad);
+}
+@media (any-hover: hover) and (any-pointer: fine) {
+  .ghostLink:hover {
+    transition-duration: var(--speed-highlightFadeIn);
+    background: var(--color-hover-bg);
+    color: var(--color-text-base);
+  }
+}
+
+/* ------------------------------------------------------------- activity */
+
+.seeAll {
+  flex: none;
+  padding: 0 4px;
+  border-radius: 4px;
+  font-size: var(--font-size-mini);
+  font-weight: var(--font-weight-medium);
+  color: var(--color-text-muted);
+  transition: color var(--speed-highlightFadeOut) var(--ease-out-quad);
+}
+@media (any-hover: hover) and (any-pointer: fine) {
+  .seeAll:hover {
+    transition-duration: var(--speed-highlightFadeIn);
+    color: var(--color-text-base);
+  }
+}
+
+.activityEntry {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  padding: 4px 0;
+}
+.activityEntry:first-child {
+  margin-top: 8px;
+}
+
+.activityIcon {
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 16px;
+  height: 16px;
+  margin-top: 1px;
+  font-size: 16px;
+  line-height: 1;
+  font-family: var(--font-emoji);
+  color: var(--icon-default-color);
+}
+
+.activityText {
+  min-width: 0;
+  font-size: 0.78125rem; /* 12.5px */
+  line-height: 1.45;
+  color: var(--color-text-muted);
+  overflow-wrap: anywhere;
+}
+
+/* Bold names in base color (capture: activity-history-highlight). */
+.activityName {
+  font-weight: var(--font-weight-medium);
+  color: var(--color-text-base);
+}
+
+.activityDate {
+  color: var(--color-text-muted);
+  white-space: nowrap;
+}
+
+/* ---------- labels + dependencies (§6.8 properties card) ---------- */
+.labelRow {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px;
+  min-width: 0;
+}
+
+.labelChip {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  min-height: 22px;
+  padding: 1px 7px;
+  border-radius: var(--radius-rounded);
+  border: var(--thin-pixel) solid var(--color-border-solid);
+  font-size: var(--font-size-mini);
+  color: var(--color-text-base);
+  transition-property: background-color;
+  transition-duration: var(--speed-highlightFadeOut);
+  transition-timing-function: var(--ease-out-quad);
+}
+
+@media (any-hover: hover) and (any-pointer: fine) {
+  .labelChip:hover,
+  .labelChip[data-menu-open="true"] {
+    background: var(--color-control-hover);
+    transition-duration: var(--speed-highlightFadeIn);
+  }
+}
+
+.labelSwatch {
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  border-radius: var(--radius-rounded);
+  background: var(--swatch-color, var(--color-text-faint));
+}
+
+.dependencyList {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.dependencyChip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 24px;
+  padding: 1px 6px;
+  border-radius: 6px;
+  font-size: var(--font-size-mini);
+  color: var(--color-text-base);
+  transition-property: background-color;
+  transition-duration: var(--speed-highlightFadeOut);
+  transition-timing-function: var(--ease-out-quad);
+}
+
+@media (any-hover: hover) and (any-pointer: fine) {
+  .dependencyChip:hover {
+    background: var(--color-hover-bg);
+    transition-duration: var(--speed-highlightFadeIn);
+  }
+}

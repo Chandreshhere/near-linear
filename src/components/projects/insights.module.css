@@ -1,0 +1,165 @@
+/*
+ * Docked insights panels — MASTER_PROMPT.md §6.10 (structural panels resize
+ * the content area; ~320–400px) and §11.3. Width animates, content never
+ * scales. Tokens only; cursor stays default (§10 capture note 14).
+ */
+
+.rail {
+  position: relative;
+  flex: none;
+  width: 320px;
+  overflow: hidden;
+  border-left: var(--thin-pixel) solid var(--color-border-thin);
+  background: var(--color-bg-surface);
+  transition: width var(--speed-regularTransition) var(--ease-shell);
+}
+
+.rail[data-open="false"] {
+  width: 0;
+  border-left-width: 0;
+}
+
+.railInner {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  width: 320px;
+  height: 100%;
+  padding: 12px;
+  overflow-y: auto;
+  scrollbar-gutter: stable;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .rail {
+    transition: none;
+  }
+}
+
+/* ---------- facet rows ---------- */
+.facetList {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  min-width: 0;
+}
+
+.facetRow,
+.milestoneRow {
+  display: grid;
+  grid-template-columns: 18px minmax(0, 1fr) auto auto;
+  align-items: center;
+  gap: 6px;
+  width: 100%;
+  min-height: 28px;
+  padding: 0 6px;
+  border-radius: 6px;
+  text-align: left;
+  font-size: var(--font-size-mini);
+  color: var(--color-text-base);
+  transition-property: background-color;
+  transition-duration: var(--speed-highlightFadeOut);
+  transition-timing-function: var(--ease-out-quad);
+}
+
+.milestoneRow {
+  grid-template-columns: 18px minmax(0, 1fr) auto;
+}
+
+@media (any-hover: hover) and (any-pointer: fine) {
+  .facetRow:hover,
+  .milestoneRow:hover {
+    background: var(--color-hover-bg);
+    transition-duration: var(--speed-highlightFadeIn);
+  }
+}
+
+.facetIcon {
+  display: inline-grid;
+  place-items: center;
+  width: 18px;
+  height: 18px;
+}
+
+.facetLabel {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--color-text-muted);
+}
+
+.facetDash {
+  color: var(--color-text-faint);
+}
+
+.facetCount {
+  font-variant-numeric: tabular-nums;
+  color: var(--color-text-base);
+}
+
+.facetBar {
+  grid-column: 2 / -1;
+  height: 2px;
+  border-radius: 2px;
+  background: var(--color-bg-shade);
+  overflow: hidden;
+}
+
+.facetBarFill {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: var(--color-accent);
+  transition: width var(--speed-regularTransition) var(--ease-out-quad);
+}
+
+.empty {
+  padding: 6px;
+  font-size: var(--font-size-mini);
+  color: var(--color-text-faint);
+}
+
+/* ---------- overview metrics ---------- */
+.metricRow {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 6px;
+}
+
+.metric {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 8px;
+  border-radius: var(--radius-card);
+  border: var(--thin-pixel) solid var(--color-border-thin);
+  background: var(--color-bg-elevated);
+}
+
+.metricValue {
+  font-size: var(--font-size-regular);
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-text-title);
+  font-variant-numeric: tabular-nums;
+}
+
+.metricLabel {
+  font-size: var(--font-size-mini);
+  color: var(--color-text-muted);
+}
+
+.sectionTitle {
+  margin-top: 8px;
+  padding: 0 6px;
+  font-size: var(--font-size-mini);
+  font-weight: var(--font-weight-medium);
+  color: var(--color-text-muted);
+}
+
+.riskCopy {
+  padding: 0 6px;
+  font-size: var(--font-size-mini);
+  line-height: 1.5;
+  color: var(--color-text-base);
+}

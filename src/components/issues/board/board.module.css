@@ -1,0 +1,387 @@
+/*
+ * Board / kanban view — MASTER_PROMPT.md §15 (CAPTURED) + video-timeline-2
+ * findings 9–13. Shared by Board / Column / Card / HiddenColumns.
+ *
+ * Tokens only. Hover idiom (§2.4/§6.1): instant in (0s), .15s fade out,
+ * gated on any-hover/any-pointer. Cursor stays the default arrow everywhere —
+ * grab/grabbing appears only on the DragOverlay while a drag is live.
+ */
+
+/* ---------- board container ---------- */
+.board {
+  display: flex;
+  align-items: stretch;
+  gap: 12px;
+  height: 100%;
+  padding: 16px 24px;
+  overflow-x: auto;
+  overflow-y: hidden;
+}
+
+/* ---------- column ---------- */
+.column {
+  flex: none;
+  display: flex;
+  flex-direction: column;
+  width: 348px;
+  min-height: 0;
+  /* column bg transparent — cards carry the surface (§15) */
+}
+
+.columnHeader {
+  flex: none;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  height: 32px;
+  padding: 0 4px 0 8px;
+  margin-bottom: 8px;
+}
+
+.columnIcon {
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+}
+
+.columnName {
+  min-width: 0;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  font-size: var(--font-size-small); /* 13px */
+  font-weight: var(--font-weight-medium);
+  color: var(--color-text-base);
+}
+
+.columnCount {
+  flex: none;
+  font-size: var(--font-size-small); /* 13px */
+  font-weight: var(--font-weight-normal);
+  color: var(--color-text-muted);
+}
+
+.columnActions {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  margin-left: auto; /* spacer */
+}
+
+/* Hover-revealed header controls: present in DOM at opacity 0 (§6.1);
+   kept visible while their menu is open (§6.2) or focused. */
+.columnAction {
+  opacity: 0;
+  transition: opacity var(--speed-highlightFadeOut) var(--ease-out-quad);
+}
+.columnAction:focus-visible,
+.columnAction[data-menu-open="true"] {
+  opacity: 1;
+}
+@media (any-hover: hover) and (any-pointer: fine) {
+  .column:hover .columnAction {
+    opacity: 1;
+    transition-duration: var(--speed-highlightFadeIn);
+  }
+}
+
+/* ---------- column body (droppable + per-column scroll area) ---------- */
+.columnBody {
+  flex: 1;
+  min-height: 40px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding-bottom: 8px;
+  overflow-y: auto;
+  overflow-x: hidden;
+  border-radius: var(--radius-row);
+  transition: background-color var(--speed-highlightFadeOut) var(--ease-out-quad);
+}
+
+/* Valid drop-target column highlights subtly while a drag is live (§15). */
+.columnBody[data-drop-target="true"] {
+  background: var(--color-hover-bg);
+  transition-duration: var(--speed-highlightFadeIn);
+}
+
+/* ---------- card ---------- */
+.card {
+  position: relative;
+  flex: none;
+  display: block;
+  padding: 10px 12px;
+  background: var(--color-bg-elevated);
+  border: 1px solid var(--color-border-thin); /* hairline */
+  border-radius: var(--radius-row); /* 8px */
+  box-shadow: var(--shadow-card);
+  color: inherit;
+  text-decoration: none;
+  user-select: none;
+  -webkit-user-select: none;
+  transition: border-color var(--speed-highlightFadeOut) var(--ease-out-quad);
+}
+@media (any-hover: hover) and (any-pointer: fine) {
+  .card:hover {
+    border-color: var(--color-border-hover);
+    transition-duration: var(--speed-highlightFadeIn);
+  }
+}
+
+/* Origin card while its copy floats: dim placeholder keeps column height
+   (CAPTURED — finding 11). */
+.cardDragging {
+  opacity: 0.4;
+}
+
+.cardId {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  margin-bottom: 4px;
+  padding-right: 26px; /* room for the absolute assignee slot */
+  font-size: var(--font-size-mini); /* 12px */
+  line-height: 16px;
+  color: var(--color-text-muted);
+}
+
+/* Hover-revealed ⋯ actions stub (CAPTURED — finding 10). Present in the DOM
+   with opacity 0 so revealing it never shifts the card (§6.1). */
+.cardMore {
+  flex: none;
+  width: 18px;
+  height: 18px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--control-border-radius);
+  color: var(--icon-default-color);
+  opacity: 0;
+  transition:
+    opacity var(--speed-highlightFadeOut) var(--ease-out-quad),
+    background-color var(--speed-highlightFadeOut) var(--ease-out-quad);
+}
+.cardMore:focus-visible,
+.cardMore[data-menu-open="true"] {
+  opacity: 1;
+}
+@media (any-hover: hover) and (any-pointer: fine) {
+  .card:hover .cardMore {
+    opacity: 1;
+    transition-duration: var(--speed-highlightFadeIn);
+  }
+  .cardMore:hover {
+    background: var(--color-control-hover);
+    color: var(--color-text-base);
+    --icon-replacement-color: var(--color-text-base);
+    transition-duration: var(--speed-highlightFadeIn);
+  }
+}
+
+.cardTitleRow {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+}
+
+.cardStatus {
+  flex: none;
+  display: inline-flex;
+  margin-top: 2px; /* optical align with the 18px first text line */
+}
+
+.cardTitle {
+  min-width: 0;
+  font-size: var(--font-size-small); /* 13px */
+  font-weight: var(--font-weight-medium);
+  line-height: 18px;
+  color: var(--color-text-base);
+  display: -webkit-box;
+  -webkit-line-clamp: 2; /* two-line clamp */
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+/* Property chip row between the title and the footer (§15 card anatomy:
+   enabled display properties). Chip internals live in propertychips.module.css;
+   this class only places the row — it wraps with the shared 4px row gap. */
+.cardChips {
+  margin-top: 8px;
+}
+
+.cardFooter {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 8px;
+  font-size: var(--font-size-mini); /* 12px */
+  line-height: 16px;
+  color: var(--color-text-muted);
+}
+
+.cardAssignee {
+  position: absolute;
+  top: 10px;
+  right: 12px;
+  display: inline-flex;
+}
+
+.assigneePlaceholder {
+  width: 18px;
+  height: 18px;
+  border-radius: var(--radius-rounded);
+  border: 1px dashed var(--color-border-hover);
+}
+
+/* ---------- quick-add pill (CAPTURED — finding 10) ----------
+   Full-width, + centered, below the last card; solid subtle bg,
+   opacity 0 until the column is hovered. */
+.quickAdd {
+  flex: none;
+  width: 100%;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  border-radius: var(--radius-row); /* 8px */
+  background: var(--color-control-hover);
+  color: var(--icon-default-color);
+  opacity: 0;
+  transition:
+    opacity var(--speed-highlightFadeOut) var(--ease-out-quad),
+    background-color var(--speed-highlightFadeOut) var(--ease-out-quad);
+}
+.quickAdd:focus-visible {
+  opacity: 1;
+}
+@media (any-hover: hover) and (any-pointer: fine) {
+  .column:hover .quickAdd {
+    opacity: 1;
+    transition-duration: var(--speed-highlightFadeIn);
+  }
+  .quickAdd:hover {
+    background: var(--color-hover-bg);
+    transition-duration: var(--speed-highlightFadeIn);
+  }
+}
+
+/* ---------- drag overlay (floating copy under the cursor) ---------- */
+.overlay {
+  cursor: grabbing;
+}
+
+/* Extra elevation + slight scale on the floating copy (§15). */
+.cardLifted {
+  box-shadow: var(--shadow-medium);
+  transform: scale(1.02);
+}
+
+/* ---------- hidden columns rail (CAPTURED — finding 9) ---------- */
+.hiddenRail {
+  flex: none;
+  align-self: flex-start;
+  width: 260px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 0 4px;
+}
+
+.hiddenTitle {
+  display: flex;
+  align-items: center;
+  height: 32px;
+  padding: 0 8px;
+  margin-bottom: 4px;
+  font-size: var(--font-size-mini); /* 12px */
+  font-weight: var(--font-weight-medium);
+  color: var(--color-text-muted);
+}
+
+.hiddenRow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  height: 36px;
+  padding: 0 8px;
+  border-radius: var(--radius-row);
+  font-size: var(--font-size-small); /* 13px */
+  color: var(--color-text-base);
+  transition: background-color var(--speed-highlightFadeOut) var(--ease-out-quad);
+}
+@media (any-hover: hover) and (any-pointer: fine) {
+  .hiddenRow:hover {
+    background: var(--color-hover-bg);
+    transition-duration: var(--speed-highlightFadeIn);
+  }
+}
+/* Droppable target highlight while a card is dragged over the row. */
+.hiddenRow[data-drop-over="true"] {
+  background: var(--color-selected-bg);
+  transition-duration: var(--speed-highlightFadeIn);
+}
+
+.hiddenRowIcon {
+  flex: none;
+  display: inline-flex;
+}
+
+.hiddenRowName {
+  min-width: 0;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.hiddenRowCount {
+  flex: none;
+  margin-left: auto;
+  font-size: var(--font-size-mini);
+  color: var(--color-text-muted);
+}
+
+/* Hover-revealed "Show column" — present in the DOM at opacity 0 so the
+   row never reflows when it appears (§6.1). */
+.hiddenRowShow {
+  flex: none;
+  height: 22px;
+  padding: 0 8px;
+  border-radius: var(--control-border-radius);
+  background: var(--color-control-hover);
+  font-size: var(--font-size-mini);
+  font-weight: var(--font-weight-medium);
+  color: var(--color-text-muted);
+  white-space: nowrap;
+  opacity: 0;
+  transition:
+    opacity var(--speed-highlightFadeOut) var(--ease-out-quad),
+    background-color var(--speed-highlightFadeOut) var(--ease-out-quad),
+    color var(--speed-highlightFadeOut) var(--ease-out-quad);
+}
+.hiddenRowShow:focus-visible {
+  opacity: 1;
+}
+@media (any-hover: hover) and (any-pointer: fine) {
+  .hiddenRow:hover .hiddenRowShow {
+    opacity: 1;
+    transition-duration: var(--speed-highlightFadeIn);
+  }
+  .hiddenRowShow:hover {
+    background: var(--color-control-selected);
+    color: var(--color-text-base);
+    transition-duration: var(--speed-highlightFadeIn);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .columnAction,
+  .columnBody,
+  .card,
+  .cardMore,
+  .quickAdd,
+  .hiddenRow,
+  .hiddenRowShow {
+    transition: none;
+  }
+}

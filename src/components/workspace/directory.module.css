@@ -1,0 +1,537 @@
+/*
+ * Shared geometry for the workspace-level directories and setup surfaces
+ * added in this pass: Members, Teams, Releases, Reviews, Import, Initiatives.
+ * Follows the captured page idiom — 57px header band supplied by <Header/>,
+ * then a centered 960px column with 13px/500 rows on a 44px rhythm.
+ * Tokens only; no literal colors.
+ */
+
+/* ---------- page frame ---------- */
+.scroller {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  scrollbar-gutter: stable;
+}
+.page {
+  width: 100%;
+  max-width: 960px;
+  margin: 0 auto;
+  padding: 20px 24px 64px;
+}
+.lead {
+  font-size: var(--font-size-small);
+  font-weight: var(--font-weight-normal);
+  line-height: 1.6;
+  color: var(--color-text-muted);
+  margin-bottom: 20px;
+  max-width: 620px;
+}
+.sectionTitle {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  height: 28px;
+  margin-top: 24px;
+  font-size: var(--font-size-mini);
+  font-weight: var(--font-weight-medium);
+  color: var(--color-text-faint);
+}
+.count {
+  font-variant-numeric: tabular-nums;
+}
+
+/* ---------- table ---------- */
+.table {
+  display: flex;
+  flex-direction: column;
+}
+.headRow {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  height: 32px;
+  padding: 0 8px;
+  border-bottom: var(--thin-pixel) solid var(--color-border-thin);
+  font-size: var(--font-size-mini);
+  font-weight: var(--font-weight-medium);
+  color: var(--color-text-faint);
+}
+.row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-height: 44px;
+  padding: 0 8px;
+  border-bottom: var(--thin-pixel) solid var(--color-border-thin);
+  border-radius: var(--radius-row);
+  color: var(--color-text-base);
+  text-align: left;
+  width: 100%;
+}
+.row:hover {
+  background: var(--color-hover-bg);
+}
+.row:focus-visible {
+  outline: var(--focus-ring-outline);
+  outline-offset: -1px;
+}
+
+/* Row the command palette navigated to (`?member=<id>`). Programmatic focus
+   does not raise :focus-visible, so the ring is painted explicitly. */
+.row[data-focused="true"] {
+  background: var(--color-hover-bg);
+  outline: var(--focus-ring-outline);
+  outline-offset: -1px;
+}
+
+/* the clickable part of a row (a real <a href> — status line shows it) */
+.rowLink {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-height: 44px;
+  color: inherit;
+}
+
+/* cells */
+.cellMain {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.stack {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  min-width: 0;
+}
+.name {
+  font-size: var(--font-size-small);
+  font-weight: var(--font-weight-medium);
+  color: var(--color-text-title);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.sub {
+  font-size: var(--font-size-mini);
+  color: var(--color-text-muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.cell {
+  flex: none;
+  font-size: var(--font-size-mini);
+  color: var(--color-text-muted);
+  white-space: nowrap;
+}
+.cellNum {
+  composes: cell;
+  width: 92px;
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+.cellWide {
+  composes: cell;
+  width: 150px;
+}
+.cellDate {
+  composes: cell;
+  width: 110px;
+  color: var(--color-text-faint);
+}
+.teamIcon {
+  flex: none;
+  width: 20px;
+  height: 20px;
+  display: grid;
+  place-items: center;
+}
+
+/* identifier / role chips */
+.chip {
+  display: inline-flex;
+  align-items: center;
+  height: 20px;
+  padding: 0 8px;
+  border-radius: var(--radius-rounded);
+  background: var(--color-bg-shade);
+  font-size: var(--font-size-micro);
+  font-weight: var(--font-weight-medium);
+  color: var(--color-text-muted);
+  white-space: nowrap;
+}
+.chipAccent {
+  composes: chip;
+  color: var(--color-text-title);
+}
+.chipPending {
+  composes: chip;
+  color: var(--color-orange);
+}
+
+/* trailing ⋯ slot — revealed on row hover (§6.1 hover idiom) */
+.menuSlot {
+  flex: none;
+  width: 24px;
+  display: flex;
+  justify-content: flex-end;
+  opacity: 0;
+}
+.row:hover .menuSlot,
+.menuSlot:focus-within,
+.menuSlot [data-menu-open="true"] {
+  opacity: 1;
+}
+.iconBtn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  border-radius: 6px;
+  color: var(--color-text-muted);
+}
+.iconBtn:hover,
+.iconBtn[data-menu-open="true"] {
+  background: var(--color-control-hover);
+  color: var(--color-text-base);
+  --icon-replacement-color: var(--color-text-base);
+  opacity: 1;
+}
+
+/* ---------- dialog internals ---------- */
+.dialogHeader {
+  padding: 16px 20px 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.dialogTitle {
+  font-size: var(--font-size-regular);
+  font-weight: var(--font-weight-medium);
+  color: var(--color-text-title);
+}
+.dialogSub {
+  font-size: var(--font-size-mini);
+  line-height: 1.5;
+  color: var(--color-text-muted);
+}
+.dialogBody {
+  padding: 16px 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+.dialogFooter {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
+  padding: 12px 20px 16px;
+  border-top: var(--thin-pixel) solid var(--color-border-thin);
+}
+.footerNote {
+  margin-right: auto;
+  font-size: var(--font-size-mini);
+  color: var(--color-text-faint);
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 0;
+}
+.fieldRow {
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+}
+.grow {
+  flex: 1;
+  min-width: 0;
+}
+.fieldNarrow {
+  flex: none;
+  width: 132px;
+}
+.label {
+  font-size: var(--font-size-mini);
+  font-weight: var(--font-weight-medium);
+  color: var(--color-text-base);
+}
+.hint {
+  font-size: var(--font-size-mini);
+  color: var(--color-text-faint);
+  line-height: 1.5;
+  max-width: 620px;
+}
+.fieldMedium {
+  flex: none;
+  width: 260px;
+}
+.error {
+  font-size: var(--font-size-mini);
+  color: var(--color-red-text);
+  line-height: 1.5;
+}
+.mono {
+  font-family: var(--font-monospace);
+  text-transform: uppercase;
+}
+
+/* icon + color pickers */
+.choiceGrid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.choice {
+  width: 30px;
+  height: 30px;
+  display: grid;
+  place-items: center;
+  border-radius: var(--radius-row);
+  background: var(--color-bg-shade);
+  color: var(--color-text-muted);
+}
+.choice:hover {
+  background: var(--color-control-hover);
+}
+.choice[aria-pressed="true"] {
+  background: var(--color-control-selected);
+  box-shadow: inset 0 0 0 1px var(--color-accent);
+}
+.swatch {
+  width: 22px;
+  height: 22px;
+  border-radius: var(--radius-rounded);
+}
+.swatch[aria-pressed="true"] {
+  box-shadow: 0 0 0 2px var(--color-bg-elevated), 0 0 0 4px var(--color-accent);
+}
+.previewRow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  height: 32px;
+  padding: 0 8px;
+  border-radius: var(--radius-row);
+  background: var(--color-bg-shade);
+  font-size: var(--font-size-small);
+  font-weight: var(--font-weight-medium);
+  color: var(--color-text-title);
+}
+
+/* ---------- honest "needs a backend" panel ---------- */
+.notice {
+  border: var(--thin-pixel) solid var(--color-border-thin);
+  border-radius: var(--radius-card);
+  background: var(--color-bg-surface);
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.noticeTitle {
+  font-size: var(--font-size-small);
+  font-weight: var(--font-weight-medium);
+  color: var(--color-text-title);
+}
+.noticeBody {
+  font-size: var(--font-size-mini);
+  line-height: 1.6;
+  color: var(--color-text-muted);
+}
+.noticeBody code {
+  font-family: var(--font-monospace);
+  font-size: var(--font-size-micro);
+  color: var(--color-text-base);
+}
+
+/* ---------- empty states ---------- */
+.emptyIllustration {
+  display: grid;
+  place-items: center;
+  color: var(--content-color);
+}
+.featureList {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin: 4px auto 0;
+  padding: 0;
+  list-style: none;
+  text-align: left;
+  max-width: 420px;
+}
+.featureItem {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  font-size: var(--font-size-small);
+  line-height: 1.5;
+  color: var(--color-text-muted);
+}
+.bullet {
+  flex: none;
+  width: 5px;
+  height: 5px;
+  margin-top: 7px;
+  border-radius: var(--radius-rounded);
+  background: var(--color-text-faint);
+}
+.pill {
+  display: inline-flex;
+  align-items: center;
+  height: 18px;
+  margin-left: 6px;
+  padding: 0 7px;
+  border-radius: var(--radius-rounded);
+  background: var(--color-bg-shade);
+  font-size: var(--font-size-micro);
+  font-weight: var(--font-weight-medium);
+  color: var(--color-text-muted);
+  white-space: nowrap;
+  vertical-align: 1px;
+}
+
+/* ---------- import ---------- */
+.sourceGrid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+  margin-bottom: 20px;
+}
+.sourceCard {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 12px;
+  border: var(--thin-pixel) solid var(--color-border-thin);
+  border-radius: var(--radius-card);
+  background: var(--color-bg-surface);
+  text-align: left;
+}
+.sourceCard:hover {
+  border-color: var(--color-border-hover);
+}
+.sourceCard[aria-pressed="true"] {
+  border-color: var(--color-accent);
+  background: var(--color-bg-shade);
+}
+.sourceName {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: var(--font-size-small);
+  font-weight: var(--font-weight-medium);
+  color: var(--color-text-title);
+}
+.sourceHint {
+  font-size: var(--font-size-mini);
+  color: var(--color-text-muted);
+  line-height: 1.5;
+}
+.fileRow {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+.fileName {
+  font-size: var(--font-size-mini);
+  color: var(--color-text-muted);
+}
+.fileInput {
+  font-size: var(--font-size-mini);
+  color: var(--color-text-muted);
+  max-width: 260px;
+}
+.emptyMark {
+  display: grid;
+  place-items: center;
+  margin-top: 32px;
+  color: var(--content-color);
+}
+/* scrollable checkbox list (initiative → projects) */
+.checkList {
+  max-height: 170px;
+  overflow-y: auto;
+  border: var(--thin-pixel) solid var(--color-border-thin);
+  border-radius: var(--radius-row);
+  padding: 4px 8px;
+}
+.checkRow {
+  display: flex;
+  align-items: center;
+  min-height: 28px;
+}
+.checkEmpty {
+  font-size: var(--font-size-mini);
+  color: var(--color-text-faint);
+  padding: 4px 0;
+}
+
+.previewWrap {
+  margin-top: 16px;
+  border: var(--thin-pixel) solid var(--color-border-thin);
+  border-radius: var(--radius-card);
+  overflow: hidden;
+}
+.previewScroll {
+  max-height: 320px;
+  overflow: auto;
+}
+.previewTable {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: var(--font-size-mini);
+}
+.previewTable th {
+  position: sticky;
+  top: 0;
+  background: var(--color-bg-surface);
+  text-align: left;
+  font-weight: var(--font-weight-medium);
+  color: var(--color-text-faint);
+  padding: 6px 10px;
+  border-bottom: var(--thin-pixel) solid var(--color-border-thin);
+  white-space: nowrap;
+}
+.previewTable td {
+  padding: 6px 10px;
+  border-bottom: var(--thin-pixel) solid var(--color-border-thin);
+  color: var(--color-text-base);
+  vertical-align: top;
+  max-width: 320px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.actionsRow {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 16px;
+}
+.skipNote {
+  font-size: var(--font-size-mini);
+  color: var(--color-text-faint);
+}
+
+/* "disabled because…" line under an empty state's actions */
+.reason {
+  margin: 12px auto 0;
+  max-width: 400px;
+  font-size: var(--font-size-mini);
+  line-height: 1.5;
+  color: var(--color-text-faint);
+}

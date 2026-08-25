@@ -1,0 +1,184 @@
+/*
+ * Workspace switcher + Help menu surface (shared by WorkspaceMenu.tsx and
+ * HelpMenu.tsx). Geometry mirrors the menu primitive — MASTER_PROMPT.md
+ * §6.2/§6.3: elevated panel, 1px solid hairline, radius 8, shadow-medium,
+ * padding 4, 28px rows, enter fade + 2px drop 120ms, exit fade 100ms.
+ * Behavior per docs/analysis/research-nav-auth.md §1 (header identity row,
+ * "Switch workspace" submenu, "Create or join a workspace").
+ */
+
+/* ---------- surface ---------- */
+.content {
+  background: var(--color-bg-elevated);
+  border: 1px solid var(--color-border-solid);
+  border-radius: 8px;
+  box-shadow: var(--shadow-medium);
+  padding: 4px;
+  min-width: 200px;
+  z-index: var(--z-overlay);
+  outline: none;
+  max-height: var(--radix-dropdown-menu-content-available-height, 80vh);
+  overflow-y: auto;
+  overflow-x: hidden;
+}
+
+/* the switcher panel is wider — it carries the workspace + account identity */
+.wide {
+  min-width: 248px;
+}
+
+.content[data-state="open"] {
+  animation: panelEnter 120ms var(--ease-out-quad);
+}
+.content[data-state="closed"] {
+  animation: panelExit 100ms var(--ease-out-quad) forwards;
+}
+
+@keyframes panelEnter {
+  from {
+    opacity: 0;
+    transform: translateY(-2px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+@keyframes panelExit {
+  from {
+    opacity: 1;
+  }
+  to {
+    opacity: 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .content[data-state="open"],
+  .content[data-state="closed"] {
+    animation: none;
+  }
+}
+
+/* ---------- identity header (workspace tile · name · account email) ---------- */
+.header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 8px 8px;
+}
+.headerText {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+.headerName {
+  font-size: var(--font-size-small);
+  font-weight: var(--font-weight-medium);
+  color: var(--color-text-base);
+  line-height: 18px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.headerEmail {
+  font-size: var(--font-size-mini);
+  color: var(--color-text-muted);
+  line-height: 16px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* rounded-square workspace tile (sidebar idiom — §5) */
+.tile {
+  width: 24px;
+  height: 24px;
+  border-radius: 8px;
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+  font-size: 11px;
+  font-weight: var(--font-weight-medium);
+  line-height: 1;
+  color: #fff;
+  background: var(--tile-bg);
+  user-select: none;
+}
+.tileSmall {
+  width: 16px;
+  height: 16px;
+  border-radius: 5px;
+  font-size: 8px;
+}
+
+/* ---------- rows ---------- */
+.item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  height: 28px;
+  padding: 0 8px;
+  border-radius: var(--control-border-radius);
+  font-size: var(--font-size-small);
+  font-weight: var(--font-weight-normal);
+  color: var(--color-text-base);
+  white-space: nowrap;
+  user-select: none;
+  outline: none;
+  /* hover idiom (§2.4): snap in when highlighted, fade out at rest */
+  transition-property: background-color, color;
+  transition-duration: var(--speed-highlightFadeOut);
+  transition-timing-function: var(--ease-out-quad);
+}
+.item[data-highlighted],
+.item[data-state="open"] {
+  background: var(--color-hover-bg);
+  transition-duration: var(--speed-highlightFadeIn);
+  --icon-replacement-color: var(--color-text-base);
+}
+.item[data-disabled] {
+  color: var(--color-text-faint);
+  --icon-replacement-color: var(--icon-faint-color);
+  pointer-events: none;
+}
+
+.label {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* right-aligned keycaps / submenu chevron / current-workspace check */
+.keys {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  flex-shrink: 0;
+  padding-left: 12px;
+}
+.then {
+  font-size: var(--font-size-mini);
+  color: var(--color-text-faint);
+}
+.chevron {
+  flex-shrink: 0;
+  padding-left: 12px;
+  color: var(--color-text-muted);
+}
+.check {
+  width: 16px;
+  height: 16px;
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+  color: var(--color-text-muted);
+}
+
+/* ---------- separator ---------- */
+.separator {
+  height: 1px;
+  background: var(--color-border-thin);
+  margin: 4px 0;
+}

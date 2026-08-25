@@ -1,0 +1,269 @@
+/*
+ * Grouped team issue list + team-issues page chrome — MASTER_PROMPT.md
+ * §10.6 (row anatomy, group headers, tabs), §6.1 (hover reveals), §6.7
+ * (highlight vs selection), §7.5 (ListCell geometry).
+ * Tokens only; hover idiom = instant in (--speed-highlightFadeIn: 0s),
+ * .15s out, gated behind any-hover/any-pointer (§2.4).
+ */
+
+/* ================= list ================= */
+
+.list {
+  padding-bottom: 32px; /* keeps the last row clear of the floating BulkBar */
+  /* Named size container: rows drop their right-side property chips when the
+     list itself (not the viewport) narrows past ~900px. */
+  container: issuelist / inline-size;
+}
+
+/*
+ * Row grid — §10.6 issue row: [checkbox 28][⋯ + id 64][status 20][title 1fr]
+ * [chips max-content][spacer 8][assignee 24][date 60]. The id column grows to
+ * max-content so long identifiers ("TRENDZO-37") never clip; the hover ⋯
+ * lives inside it (space always reserved — reveal without layout shift,
+ * §6.1). The chips column sizes to its capped content and collapses to 0
+ * when the chips hide (the CELL stays in the DOM so columns never shift).
+ */
+.rowGrid {
+  display: grid;
+  grid-template-columns:
+    28px minmax(64px, max-content) 20px minmax(0, 1fr) max-content 8px 24px 60px;
+  column-gap: 8px;
+  align-items: center;
+  height: 100%;
+  padding: 0 16px 0 10px;
+}
+
+.cellCheckbox {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.cellId {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+}
+
+.idText {
+  font-size: var(--font-size-mini); /* 12px */
+  font-weight: var(--font-weight-normal);
+  color: var(--color-text-muted);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+/* Hover-revealed ⋯ overflow (§6.1 — in DOM at opacity 0, no layout shift). */
+.moreBtn {
+  width: 18px;
+  height: 18px;
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--control-border-radius);
+  color: var(--color-text-muted);
+  opacity: 0;
+  transition-property: opacity, background-color, color;
+  transition-duration: var(--speed-highlightFadeOut);
+  transition-timing-function: var(--ease-out-quad);
+}
+.moreBtn:focus-visible {
+  opacity: 1;
+}
+@media (any-hover: hover) and (any-pointer: fine) {
+  .rowGrid:hover .moreBtn {
+    opacity: 1;
+    transition-duration: var(--speed-highlightFadeIn);
+  }
+  .moreBtn:hover {
+    background: var(--color-control-hover);
+    color: var(--color-text-base);
+    transition-duration: var(--speed-highlightFadeIn);
+  }
+}
+
+.cellStatus {
+  display: grid;
+  place-items: center;
+}
+
+.cellTitle {
+  min-width: 0;
+  font-size: var(--font-size-small); /* 13px */
+  font-weight: var(--font-weight-medium); /* 500 */
+  color: var(--color-text-title);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Nested sub-issue lead-in tick (§11.1 "Nested sub-issues"). */
+.subIssueTick {
+  display: inline-block;
+  width: 10px;
+  height: 6px;
+  margin-right: 6px;
+  vertical-align: middle;
+  border-left: var(--thin-pixel) solid var(--color-border-solid);
+  border-bottom: var(--thin-pixel) solid var(--color-border-solid);
+  border-bottom-left-radius: 3px;
+}
+
+/* Right-aligned property chips cell (before assignee/date — reference row).
+   The cell itself never hides (hiding a grid item would shift the columns);
+   the inner chip row does, via the container query below. */
+.cellChips {
+  display: flex;
+  justify-content: flex-end;
+  min-width: 0;
+}
+
+/* List rows keep chips to a single line (max 3 pills + "+N" via the
+   renderer); the board card wraps instead. */
+.rowChips {
+  flex-wrap: nowrap;
+}
+
+/* Narrow list container (~<900px): drop the chips, keep id/title/assignee/
+   date. Width query on the .list container, not the viewport, so a squeezed
+   panel behaves the same as a small window. */
+@container issuelist (max-width: 900px) {
+  .rowChips {
+    display: none;
+  }
+}
+
+.cellAssignee {
+  display: grid;
+  place-items: center;
+}
+
+/* Dashed empty-assignee placeholder (f0033: dashed person glyph). */
+.assigneePlaceholder {
+  display: grid;
+  place-items: center;
+  color: var(--color-text-faint);
+}
+
+.cellDate {
+  font-size: var(--font-size-mini); /* 12px */
+  font-weight: var(--font-weight-normal);
+  color: var(--color-text-muted);
+  text-align: right;
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+}
+
+/*
+ * Invisible picker anchor pinned to the top-left of the *visible* list
+ * area (containing block = the positioned .listArea wrapper, so it does
+ * not scroll away). Pickers opened via S/A/P/L anchor here for now.
+ */
+.pickerAnchors {
+  position: absolute;
+  top: 12px;
+  left: 16px;
+  width: 0;
+  height: 0;
+  pointer-events: none;
+}
+.pickerAnchor {
+  display: inline-block;
+  width: 1px;
+  height: 1px;
+}
+
+/* Fills the scroller so the empty state centers vertically (f0041). */
+.emptyFill {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+/* 2×2 status-icon cluster for the team empty state (f0041). */
+.statusCluster {
+  display: grid;
+  grid-template-columns: repeat(2, 22px);
+  grid-auto-rows: 22px;
+  gap: 8px;
+}
+.statusCluster > span {
+  display: grid;
+  place-items: center;
+}
+
+/* ================= page chrome (TeamIssuesView) ================= */
+
+/* Breadcrumb "TeamName › Issues" — 13px, name muted, leaf base (§10.6). */
+.crumbs {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+  font-size: var(--font-size-small);
+  font-weight: var(--font-weight-medium);
+  white-space: nowrap;
+}
+.crumbTeam {
+  color: var(--color-text-muted);
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.crumbSep {
+  color: var(--color-text-faint);
+  font-weight: var(--font-weight-normal);
+}
+.crumbCurrent {
+  color: var(--color-text-base);
+}
+
+/* Boot skeleton bar in place of the team name (shimmer §6.6). */
+.crumbSkeleton {
+  width: 72px;
+  height: 13px;
+  border-radius: var(--control-border-radius);
+  background: linear-gradient(
+    90deg,
+    var(--color-bg-shade) 25%,
+    var(--color-hover-bg) 50%,
+    var(--color-bg-shade) 75%
+  );
+  background-size: 200% 100%;
+  animation: crumbShimmer 1.4s ease infinite;
+}
+@keyframes crumbShimmer {
+  from {
+    background-position: 150% 0;
+  }
+  to {
+    background-position: -50% 0;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .crumbSkeleton {
+    animation: none;
+  }
+}
+
+/*
+ * Content area below the header: the positioning context the floating
+ * BulkBar and the picker anchors resolve against (they escape the
+ * scroller's clipping because the scroller itself is static).
+ */
+.listArea {
+  position: relative;
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Board fills the area; the Board component owns its own scrolling. */
+.boardArea {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}

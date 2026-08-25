@@ -1,0 +1,89 @@
+/*
+ * Dialog primitive (Radix) — CAPTURED values, MASTER_PROMPT §6.3/§6.6/§7.6.
+ * Overlay: fixed dim layer, fade-in 150ms. Content: centered elevated panel,
+ * radius 12 (--radius-panel), shadow-medium, enter fade + drop 2px + scale
+ * .98->1 over 150ms ease-out-quad; exit fade ~100ms.
+ */
+
+.overlay {
+  position: fixed;
+  inset: 0;
+  background: var(--color-scrim);
+  z-index: var(--z-overlay);
+}
+.overlay[data-state="open"] {
+  animation: overlayIn 0.15s var(--ease-out-quad);
+}
+.overlay[data-state="closed"] {
+  animation: overlayOut 0.1s var(--ease-out-quad) forwards;
+}
+
+.content {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: var(--dialog-width, 640px);
+  max-width: calc(100vw - 32px);
+  max-height: calc(100vh - 32px);
+  overflow-y: auto;
+  background: var(--color-bg-elevated);
+  border: 1px solid var(--color-border-solid);
+  border-radius: var(--radius-panel);
+  box-shadow: var(--shadow-medium);
+  z-index: var(--z-overlay-2);
+  outline: none;
+}
+.content[data-state="open"] {
+  animation: contentIn 0.15s var(--ease-out-quad);
+}
+.content[data-state="closed"] {
+  animation: contentOut 0.1s var(--ease-out-quad) forwards;
+}
+
+/* Content rhythm (CAPTURED §7.6) */
+.content p {
+  margin: 12px 0;
+}
+
+@keyframes overlayIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+@keyframes overlayOut {
+  from {
+    opacity: 1;
+  }
+  to {
+    opacity: 0;
+  }
+}
+@keyframes contentIn {
+  from {
+    opacity: 0;
+    transform: translate(-50%, calc(-50% - 2px)) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: translate(-50%, -50%) scale(1);
+  }
+}
+@keyframes contentOut {
+  from {
+    opacity: 1;
+  }
+  to {
+    opacity: 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .overlay,
+  .content {
+    animation: none;
+  }
+}

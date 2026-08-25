@@ -1,0 +1,83 @@
+/*
+ * Shared issue property chips — card/row parity (MASTER_PROMPT.md §15 card
+ * anatomy + §11.1 display-properties vocabulary). Used by the board card and
+ * the list row through components/issues/PropertyChips.tsx.
+ *
+ * Chip spec: inline-flex · h20 · padding 0 6 · radius 6 · hairline ring ·
+ * transparent bg · 11.5px/450 muted text · icon/dot 8–14px · 4–6px gaps.
+ * Icon-only chips (the priority glyph) carry no ring/padding. Chips are
+ * inert: no hover styling, so they can never shift layout on hover, and the
+ * cursor stays the default arrow (§2.4 cursor policy).
+ */
+
+.chips {
+  display: flex; /* block-level: no inline line-box leading inside the card */
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px 6px; /* row-gap 4 when the card row wraps, 6 between chips */
+  min-width: 0;
+}
+
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  height: 20px;
+  padding: 0 6px;
+  border-radius: 6px; /* spec: between --control-border-radius and --radius-row */
+  background: transparent;
+  box-shadow: 0 0 0 var(--thin-pixel) var(--color-border-solid) inset; /* hairline ring */
+  font-size: 11.5px; /* spec 11–12px — between --font-size-micro and -mini */
+  font-weight: var(--font-weight-normal); /* 450 */
+  line-height: 1;
+  color: var(--color-text-muted);
+  white-space: nowrap;
+}
+
+/* Icon-only chip (priority glyph): bare — no ring, no padding. */
+.glyph {
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  height: 20px;
+}
+
+/* Ellipsized value text (project / milestone / label names). */
+.chipLabel {
+  min-width: 0;
+  max-width: 120px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* 8px label color dot. */
+.dot {
+  flex: none;
+  width: 8px;
+  height: 8px;
+  border-radius: var(--radius-rounded);
+}
+
+/* 8px milestone diamond wrapper (optical centering of the svg). */
+.diamond {
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+}
+
+/* 12px project icon tile (emoji or tinted #Project sprite). */
+.projectIcon {
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 12px;
+  height: 12px;
+  overflow: visible;
+}
+
+/* Overdue due-date chip: red text; the calendar glyph follows currentColor. */
+.overdue {
+  color: var(--color-red-text);
+}

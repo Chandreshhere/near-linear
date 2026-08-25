@@ -1,0 +1,78 @@
+/* Toggle (signature squish) — MASTER_PROMPT §7.3 (CAPTURED, exact). */
+
+/* track: 30×20, radius 72px */
+.toggle {
+  appearance: none;
+  position: relative;
+  width: 30px;
+  height: 20px;
+  margin: 0;
+  padding: 0;
+  flex-shrink: 0;
+  border: none;
+  border-radius: 72px;
+  background: var(--color-control-selected);
+  /* hover idiom on the track tint (§2.4) */
+  transition-property: background-color;
+  transition-duration: var(--speed-highlightFadeOut);
+  transition-timing-function: var(--ease-out-quad);
+}
+
+/* thumb: h14 r7 white, pinned by BOTH insets so it can stretch.
+   Rest (unchecked) transition covers the UNCHECKING travel:
+   left leads (0s), right trails (50ms). */
+.toggle::before {
+  content: "";
+  position: absolute;
+  top: 3px;
+  height: 14px;
+  border-radius: 7px;
+  background: #fff;
+  left: 3px;
+  right: 13px;
+  transition-property: left, right;
+  transition-duration: var(--speed-quickTransition), var(--speed-quickTransition);
+  transition-timing-function: ease-out, ease-out;
+  transition-delay: 0s, 50ms;
+}
+
+.toggle:checked {
+  background: var(--color-toggle-track);
+}
+
+/* CHECKING travel: right leads (0s), left trails (50ms) → squish. */
+.toggle:checked::before {
+  left: 13px;
+  right: 3px;
+  transition-delay: 50ms, 0s;
+}
+
+@media (any-hover: hover) and (any-pointer: fine) {
+  .toggle:checked:hover:not(:disabled) {
+    background: var(--color-toggle-track-hover);
+    transition-duration: var(--speed-highlightFadeIn);
+  }
+}
+
+/* -6px inflated hit area (second pseudo) */
+.toggle::after {
+  content: "";
+  position: absolute;
+  inset: -6px;
+}
+
+.toggle:focus-visible {
+  outline-offset: 2px;
+}
+
+.toggle:disabled {
+  opacity: 0.6;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .toggle,
+  .toggle::before {
+    transition-duration: 0s;
+    transition-delay: 0s;
+  }
+}

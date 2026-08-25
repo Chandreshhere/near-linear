@@ -1,0 +1,290 @@
+/*
+ * Login screen — no app chrome. Centred 400px column on the window-coloured
+ * ground (MASTER_PROMPT §17.1, research-nav-auth.md §1).
+ */
+
+.ground {
+  position: fixed;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 32px 16px 24px;
+  background: var(--bg-color);
+  overflow-y: auto;
+}
+
+.column {
+  width: 400px;
+  max-width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  animation: authFadeIn 0.2s ease-out both;
+}
+
+@keyframes authFadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+.mark {
+  align-self: center;
+  margin-bottom: 24px;
+}
+
+.title {
+  margin: 0 0 28px;
+  font-size: var(--font-size-title2); /* 24px */
+  font-weight: var(--font-weight-semibold); /* 600 */
+  line-height: 32px;
+  letter-spacing: -0.01rem;
+  color: var(--color-text-title);
+  text-align: center;
+}
+
+/* ---------- method list ---------- */
+
+.methods {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+/* Full-width 44px pill (§7.1 onboarding size) with a leading 16px glyph. */
+.method.method {
+  width: 100%;
+  justify-content: center;
+  gap: 10px;
+}
+
+.methodGlyph {
+  display: grid;
+  place-items: center;
+  width: 16px;
+  height: 16px;
+  flex-shrink: 0;
+  color: var(--color-text-muted);
+}
+.method:hover .methodGlyph {
+  color: var(--color-text-base);
+}
+
+/* ---------- email + code forms ---------- */
+
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.fieldLabel {
+  font-size: var(--font-size-small);
+  font-weight: var(--font-weight-medium);
+  color: var(--color-text-base);
+}
+
+.submit.submit {
+  width: 100%;
+}
+
+.hint {
+  font-size: var(--font-size-mini);
+  font-weight: var(--font-weight-normal);
+  line-height: 18px;
+  color: var(--color-text-muted);
+  text-align: center;
+  text-wrap: balance;
+}
+
+.hintStrong {
+  color: var(--color-text-base);
+  font-weight: var(--font-weight-medium);
+  overflow-wrap: anywhere;
+}
+
+.seam {
+  font-size: var(--font-size-mini);
+  color: var(--color-text-faint);
+  text-align: center;
+}
+
+.error {
+  font-size: var(--font-size-mini);
+  color: var(--color-red-text);
+  text-align: center;
+  min-height: 18px;
+}
+
+/* 6 single-character code boxes */
+.codeRow {
+  display: flex;
+  justify-content: center;
+  gap: 8px;
+}
+
+.codeInput.codeInput {
+  width: 46px;
+  height: 52px;
+  padding: 0;
+  text-align: center;
+  font-size: var(--font-size-large);
+  font-weight: var(--font-weight-medium);
+  font-variant-numeric: tabular-nums;
+  color: var(--color-text-title);
+}
+
+/* ---------- secondary actions ---------- */
+
+.actions {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  margin-top: 4px;
+}
+
+.linkButton {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 28px;
+  padding: 0 8px;
+  border-radius: var(--radius-rounded);
+  font-size: var(--font-size-small);
+  font-weight: var(--font-weight-medium);
+  color: var(--color-text-muted);
+  transition-property: background-color, color;
+  transition-duration: var(--speed-highlightFadeOut);
+  transition-timing-function: var(--ease-out-quad);
+}
+@media (any-hover: hover) and (any-pointer: fine) {
+  .linkButton:hover {
+    transition-duration: var(--speed-highlightFadeIn);
+    background: var(--color-control-hover);
+    color: var(--color-text-base);
+  }
+}
+.linkButton:disabled {
+  opacity: 0.6;
+}
+
+.divider {
+  width: 1px;
+  height: 14px;
+  background: var(--color-border-solid);
+}
+
+/* ---------- footer ---------- */
+
+.footer {
+  position: absolute;
+  bottom: 24px;
+  left: 0;
+  right: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+}
+
+.footerLink {
+  font-size: var(--font-size-mini);
+  font-weight: var(--font-weight-normal);
+  color: var(--color-text-faint);
+  transition: color var(--speed-highlightFadeOut) var(--ease-out-quad);
+}
+@media (any-hover: hover) and (any-pointer: fine) {
+  .footerLink:hover {
+    transition-duration: var(--speed-highlightFadeIn);
+    color: var(--color-text-muted);
+  }
+}
+
+@media (max-height: 560px) {
+  .footer {
+    position: static;
+    margin-top: 32px;
+  }
+  .ground {
+    justify-content: flex-start;
+  }
+}
+
+/* Footer links are buttons now (they open dialogs, not documents) — keep the
+   keyboard ring the anchors had. */
+.footerLink:focus-visible {
+  outline: var(--focus-ring-outline);
+  outline-offset: 2px;
+  border-radius: var(--control-border-radius);
+  color: var(--color-text-muted);
+}
+
+/* ================================================================
+ * Identity-provider / legal explainer dialogs
+ * ================================================================ */
+
+.providerDialog {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 20px;
+  max-height: min(78vh, 620px);
+  overflow-y: auto;
+}
+
+.providerTitle {
+  font-size: var(--font-size-regular); /* 15px */
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-text-title);
+}
+
+.providerBody {
+  font-size: var(--font-size-small); /* 13px */
+  line-height: 1.6;
+  color: var(--color-text-muted);
+}
+
+.providerStepsTitle {
+  margin-top: 4px;
+  font-size: var(--font-size-mini); /* 12px */
+  font-weight: var(--font-weight-medium);
+  color: var(--color-text-base);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.providerSteps {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin: 0;
+  padding-left: 20px;
+  list-style: decimal;
+  font-size: var(--font-size-small); /* 13px */
+  line-height: 1.55;
+  color: var(--color-text-muted);
+}
+
+.providerNote {
+  padding: 10px 12px;
+  border-radius: var(--radius-card);
+  background: var(--color-bg-shade);
+  box-shadow: inset 0 0 0 var(--thin-pixel) var(--color-border-thin);
+  font-size: var(--font-size-mini); /* 12px */
+  line-height: 1.55;
+  color: var(--color-text-muted);
+}
+
+.providerActions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: 4px;
+}

@@ -1,0 +1,790 @@
+/*
+ * Settings chrome + list-view geometry — CAPTURED
+ * (docs/analysis/capture-preferences.md §1, §6; MASTER_PROMPT §7.8, §10.9).
+ *
+ * Settings replaces the normal app chrome: settings sidebar (244px) + floating
+ * content card (radius 12, 8px gaps) with its own 64px top strip + the 28px
+ * agent toolbar. Content column max-width 640px, section stack gap 48px.
+ */
+
+/* ---------- frame ---------- */
+
+.layout {
+  display: flex;
+  align-items: stretch;
+  width: 100%;
+  height: 100%;
+  overflow: clip;
+}
+
+.sidebarSpacer {
+  width: var(--sidebar-width);
+  height: 100%;
+  flex-shrink: 0;
+}
+
+.sidebar {
+  position: fixed;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: var(--sidebar-width);
+  max-width: min(100vw - 40px, 330px);
+  z-index: var(--z-sidebar);
+  display: flex;
+  flex-direction: column;
+  background: var(--bg-sidebar-color);
+}
+
+.mainColumn {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.contentCard {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  background: var(--bg-base-color);
+  border: var(--thin-pixel) solid var(--bg-border-color);
+  border-radius: var(--radius-panel);
+  margin: 8px 8px calc(8px + var(--agent-toolbar-height)) 0;
+  overflow: hidden;
+  isolation: isolate;
+}
+
+.scroller {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  outline: none;
+}
+
+/* the card's own 64px top strip (no app header in settings mode) */
+.topStrip {
+  height: 64px;
+  flex-shrink: 0;
+}
+
+.contentMargins {
+  margin-inline: 40px;
+  margin-bottom: 64px;
+  display: flex;
+  justify-content: center; /* CAPTURED: 640px column centred in the card */
+}
+
+.content {
+  width: 100%;
+  max-width: 640px;
+}
+
+@media (max-width: 640px) {
+  .contentMargins {
+    margin-inline: 22px;
+  }
+}
+
+/* ---------- settings sidebar ---------- */
+
+.sidebarNav {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-height: 0;
+}
+
+.sidebarHeader {
+  height: calc(var(--header-height) + 1px);
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  padding-left: 4px;
+}
+
+.backLink {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  height: 28px;
+  padding: 0 10px 0 8px;
+  margin-left: 8px;
+  border-radius: var(--radius-row);
+  font-size: var(--font-size-small);
+  font-weight: var(--font-weight-medium);
+  color: var(--color-text-base);
+  transition-property: background-color, color;
+  transition-duration: var(--speed-highlightFadeOut);
+  transition-timing-function: var(--ease-out-quad);
+}
+@media (any-hover: hover) and (any-pointer: fine) {
+  .backLink:hover {
+    transition-duration: var(--speed-highlightFadeIn);
+    background: var(--color-hover-bg);
+    color: var(--color-text-title);
+    --icon-replacement-color: var(--color-text-title);
+  }
+}
+
+.searchRow {
+  padding: 4px 12px 0;
+  flex-shrink: 0;
+}
+
+.searchWrap {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.searchGlyph {
+  position: absolute;
+  left: 8px;
+  display: grid;
+  place-items: center;
+  pointer-events: none;
+  --icon-default-color: var(--color-text-faint);
+}
+
+.searchInput.searchInput {
+  height: 28px;
+  padding-left: 30px;
+  padding-right: 10px;
+  border-radius: var(--radius-row);
+  font-size: var(--font-size-small);
+  background: var(--color-bg-shade);
+  border-color: transparent;
+}
+
+.sidebarScroll {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  scrollbar-gutter: stable;
+  padding: 16px 12px 0;
+  outline: none;
+}
+
+.group {
+  margin-bottom: 16px;
+}
+
+.groupTitle {
+  margin: 0 0 6px;
+  padding-left: 10px;
+  font-size: var(--font-size-small);
+  font-weight: var(--font-weight-medium);
+  color: var(--color-text-muted);
+}
+
+.link {
+  display: flex;
+  align-items: center;
+  height: 28px;
+  margin-block: 1px;
+  padding: 0 9px 0 8px;
+  border-radius: var(--radius-row);
+  font-size: var(--font-size-small);
+  font-weight: var(--font-weight-medium);
+  color: var(--color-text-base);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  transition-property: background-color, color;
+  transition-duration: var(--speed-highlightFadeOut);
+  transition-timing-function: var(--ease-out-quad);
+}
+.linkIcon {
+  display: grid;
+  place-items: center;
+  width: 14px;
+  height: 14px;
+  margin-right: 6px;
+  flex-shrink: 0;
+}
+@media (any-hover: hover) and (any-pointer: fine) {
+  .link:hover {
+    transition-duration: var(--speed-highlightFadeIn);
+    background: var(--color-hover-bg);
+  }
+}
+.link[data-active="true"] {
+  background: var(--color-selected-bg);
+  color: var(--color-text-title);
+  --icon-replacement-color: var(--color-text-title);
+}
+
+.noResults {
+  padding: 6px 10px 12px;
+  font-size: var(--font-size-small);
+  color: var(--color-text-muted);
+}
+
+/* ---------- page primitives ---------- */
+
+.pageTitle {
+  margin: 0;
+  font-size: var(--font-size-title2); /* 24px */
+  font-weight: var(--font-weight-medium); /* 500 */
+  line-height: 32px;
+  letter-spacing: -0.01rem;
+  color: var(--color-text-title);
+}
+
+.pageSubtitle {
+  margin-top: 6px;
+  font-size: var(--font-size-small);
+  font-weight: var(--font-weight-normal);
+  line-height: 20px;
+  color: var(--color-text-muted);
+  max-width: 60ch;
+}
+
+/* CAPTURED: 32px spacer below the H1 (24px ≤640px) */
+.titleSpacer {
+  height: 32px;
+}
+@media (max-width: 640px) {
+  .titleSpacer {
+    height: 24px;
+  }
+}
+
+.sections {
+  display: flex;
+  flex-direction: column;
+  gap: 48px;
+}
+@media (max-width: 640px) {
+  .sections {
+    gap: 24px;
+  }
+}
+
+.section {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding-top: 12px;
+  scroll-margin-top: 32px;
+}
+
+.sectionTitle {
+  margin: 0;
+  font-size: var(--font-size-regular); /* .9375rem */
+  font-weight: var(--font-weight-medium);
+  line-height: 1.4375rem;
+  color: var(--color-text-title);
+}
+
+.sectionDescription {
+  margin-top: -8px;
+  font-size: var(--font-size-mini);
+  font-weight: var(--font-weight-normal);
+  line-height: 18px;
+  color: var(--color-text-muted);
+}
+
+.cards {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+/* ---------- card + rows (CAPTURED §6 card/row geometry) ---------- */
+
+.card {
+  border-radius: var(--radius-card); /* 10px */
+  background: var(--color-bg-elevated);
+  box-shadow: 0 0 0 var(--thin-pixel) var(--color-border-thin);
+  overflow: hidden;
+}
+
+.list {
+  display: flex;
+  flex-direction: column;
+}
+
+.row {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  min-height: 60px;
+  padding: 16px;
+  transition-property: background-color;
+  transition-duration: var(--speed-highlightFadeOut);
+  transition-timing-function: var(--ease-out-quad);
+}
+@media (any-hover: hover) and (any-pointer: fine) {
+  .row:hover {
+    transition-duration: var(--speed-highlightFadeIn);
+    background: var(--color-control-hover);
+  }
+}
+/* separator inset 16px left/right, on every row but the last */
+.row:not(:last-child)::after {
+  content: "";
+  position: absolute;
+  left: 16px;
+  right: 16px;
+  bottom: 0;
+  border-bottom: var(--thin-pixel) solid var(--color-border-thin);
+}
+@media (max-width: 640px) {
+  .row {
+    padding: 16px 10.67px;
+    gap: 8px;
+  }
+}
+
+.rowText {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  min-width: 0;
+  flex-wrap: wrap;
+}
+
+.rowLabel {
+  font-size: var(--font-size-small); /* 13px */
+  font-weight: var(--font-weight-medium); /* 500 */
+  color: var(--color-text-base);
+}
+
+.rowDescription {
+  font-size: var(--font-size-mini); /* 12px */
+  font-weight: var(--font-weight-normal); /* 450 */
+  line-height: 17px;
+  color: var(--color-text-muted);
+}
+
+.rowControl {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+/* ---------- settings select (CAPTURED trigger geometry) ---------- */
+
+.select.select {
+  height: 30px;
+  width: 277px;
+  padding: 0 28px 0 10px;
+  border-radius: 8px;
+  font-size: var(--font-size-small);
+  font-weight: var(--font-weight-normal);
+  position: relative;
+}
+.select.select > span:last-child {
+  position: absolute;
+  right: 9px;
+}
+@media (max-width: 768px) {
+  .select.select {
+    width: 200px;
+  }
+}
+@media (max-width: 640px) {
+  .select.select {
+    width: 125px;
+  }
+}
+
+/* settings-width text input (matches the captured select width ladder) */
+.rowInput.rowInput {
+  width: 277px;
+  height: 30px;
+}
+@media (max-width: 768px) {
+  .rowInput.rowInput {
+    width: 200px;
+  }
+}
+@media (max-width: 640px) {
+  .rowInput.rowInput {
+    width: 125px;
+  }
+}
+
+.selectValue {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+
+.mutedSuffix {
+  color: var(--color-text-muted);
+}
+
+/* theme "Aa" chip (CAPTURED colours live on the element as inline styles) */
+.themeChip {
+  display: inline-grid;
+  place-items: center;
+  width: 20px;
+  height: 20px;
+  border-radius: 5px;
+  font-size: 10px;
+  font-weight: var(--font-weight-medium);
+  line-height: 1;
+  flex-shrink: 0;
+  box-shadow: inset 0 0 0 1px lch(100% 0 272 / 0.08);
+  position: relative;
+}
+.themeChip::after {
+  content: "";
+  position: absolute;
+  right: 2px;
+  bottom: 2px;
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: var(--chip-accent);
+}
+
+/* theme drawer: revealed sub-rows */
+.drawer {
+  display: grid;
+  grid-template-rows: 0fr;
+  transition: grid-template-rows 0.18s var(--ease-out-quad);
+}
+.drawer[data-open="true"] {
+  grid-template-rows: 1fr;
+}
+.drawerInner {
+  overflow: hidden;
+  min-height: 0;
+}
+.drawer[data-open="false"] .row::after {
+  border-bottom-color: transparent;
+}
+
+/* ---------- editable list rows (labels) ---------- */
+
+.dot {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.inlineForm {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+}
+
+.inlineInput.inlineInput {
+  flex: 1;
+  min-width: 0;
+  height: 30px;
+}
+
+.swatchRow {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.swatch {
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  box-shadow: 0 0 0 1px var(--color-border-thin);
+}
+.swatch[aria-pressed="true"] {
+  box-shadow:
+    0 0 0 2px var(--color-bg-elevated),
+    0 0 0 3px var(--color-text-title);
+}
+
+.cardFooter {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 12px 16px;
+  border-top: var(--thin-pixel) solid var(--color-border-thin);
+}
+
+.emptyRow {
+  padding: 20px 16px;
+  font-size: var(--font-size-small);
+  color: var(--color-text-muted);
+}
+
+/* ---------- "not configured yet" panel ---------- */
+
+.panel {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 24px;
+  border-radius: var(--radius-card);
+  background: var(--color-bg-elevated);
+  box-shadow: 0 0 0 var(--thin-pixel) var(--color-border-thin);
+}
+
+.panelIcon {
+  display: grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  background: var(--color-bg-shade);
+  --icon-default-color: var(--color-text-muted);
+}
+
+.panelTitle {
+  font-size: var(--font-size-small);
+  font-weight: var(--font-weight-medium);
+  color: var(--color-text-title);
+}
+
+.panelBody {
+  font-size: var(--font-size-mini);
+  font-weight: var(--font-weight-normal);
+  line-height: 18px;
+  color: var(--color-text-muted);
+  max-width: 56ch;
+}
+
+.panelActions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 4px;
+}
+
+/* ---------- misc content atoms ---------- */
+
+.fieldStack {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  width: 100%;
+}
+
+.fieldLabel {
+  font-size: var(--font-size-small);
+  font-weight: var(--font-weight-medium);
+  color: var(--color-text-base);
+}
+
+.fieldHint {
+  font-size: var(--font-size-mini);
+  color: var(--color-text-muted);
+}
+
+.textarea {
+  width: 100%;
+  min-height: 120px;
+  padding: 12px;
+  border-radius: 10px;
+  border: 1px solid var(--color-border-solid);
+  background: var(--color-bg-elevated);
+  color: var(--color-text-base);
+  font-family: var(--font-regular);
+  font-size: var(--font-size-small);
+  font-weight: var(--font-weight-normal);
+  line-height: 1.55;
+  resize: vertical;
+  user-select: text;
+}
+.textarea::placeholder {
+  color: var(--color-text-faint);
+}
+.textarea:focus {
+  border-color: var(--focus-ring-color);
+  outline: none;
+}
+
+.avatarRow {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.statusGroup {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.categoryTitle {
+  font-size: var(--font-size-mini);
+  font-weight: var(--font-weight-medium);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--color-text-muted);
+}
+
+.count {
+  font-size: var(--font-size-small);
+  font-variant-numeric: tabular-nums;
+  color: var(--color-text-muted);
+}
+
+.pillTag {
+  display: inline-flex;
+  align-items: center;
+  height: 22px;
+  padding: 0 8px;
+  border-radius: var(--radius-rounded);
+  font-size: var(--font-size-micro);
+  font-weight: var(--font-weight-medium);
+  color: var(--color-text-muted);
+  box-shadow: 0 0 0 1px var(--color-border-thin);
+}
+.pillTag[data-tone="on"] {
+  color: var(--color-green);
+  box-shadow: 0 0 0 1px var(--color-green-ring);
+}
+
+.rangeRow {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+}
+
+.range {
+  flex: 1;
+  accent-color: var(--color-accent);
+}
+
+.dialogHeader {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 16px 16px 12px;
+}
+
+.dialogTitle {
+  font-size: var(--font-size-regular);
+  font-weight: var(--font-weight-medium);
+  color: var(--color-text-title);
+}
+
+.dialogBody {
+  padding: 0 16px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.dialogFooter {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  padding: 12px 16px;
+  border-top: var(--thin-pixel) solid var(--color-border-thin);
+}
+
+.toggleList {
+  display: flex;
+  flex-direction: column;
+}
+
+.toggleRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  min-height: 40px;
+}
+
+/* ================================================================
+ * Narrow viewports (≤1023px) — settings sidebar becomes a drawer.
+ * Mirrors the app shell's treatment; breakpoint is NARROW_QUERY in
+ * components/shell/sidebarDrawer.ts.
+ * ================================================================ */
+
+/* Menu button parked in the 64px top strip (the settings surface has no
+   Header component of its own to hang it off). */
+.drawerMenuBtn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  margin: 18px 0 0 12px;
+  border-radius: var(--radius-rounded);
+  color: var(--color-text-muted);
+  transition: background-color var(--speed-highlightFadeOut) var(--ease-out-quad);
+}
+.drawerMenuBtn:focus-visible {
+  outline: var(--focus-ring-outline);
+  outline-offset: 1px;
+}
+@media (any-hover: hover) and (any-pointer: fine) {
+  .drawerMenuBtn:hover {
+    background: var(--color-control-hover);
+    color: var(--color-text-base);
+    transition-duration: var(--speed-highlightFadeIn);
+  }
+}
+
+@media (max-width: 1023px) {
+  .sidebarSpacer {
+    display: none;
+  }
+
+  .sidebar {
+    border-right: var(--thin-pixel) solid var(--color-border-solid);
+    box-shadow: var(--shadow-medium);
+    transform: translateX(-100%);
+    visibility: hidden;
+    transition:
+      transform 220ms var(--ease-out-quad),
+      visibility 0s linear 220ms;
+  }
+
+  [data-drawer-open="true"] .sidebar {
+    transform: translateX(0);
+    visibility: visible;
+    transition:
+      transform 220ms var(--ease-out-quad),
+      visibility 0s;
+  }
+
+  .layout[data-narrow="true"] .contentCard {
+    margin-left: 8px;
+  }
+
+  .contentMargins {
+    margin-inline: 20px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .sidebar {
+    transition-duration: 0s;
+  }
+}
+
+/* Below ~560px a label + a 125px control side by side leaves the label two
+   words per line. Stack them instead — the control keeps its own width. */
+@media (max-width: 560px) {
+  .row {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 10px;
+  }
+  .rowControl {
+    justify-content: flex-start;
+  }
+  .select.select,
+  .rowInput.rowInput {
+    width: 100%;
+  }
+}

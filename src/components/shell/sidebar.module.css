@@ -1,0 +1,401 @@
+.spacer {
+  width: var(--sidebar-width);
+  height: 100%;
+  flex-shrink: 0;
+}
+
+.panel {
+  position: fixed;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: var(--sidebar-width);
+  max-width: min(100vw - 40px, 330px);
+  z-index: var(--z-sidebar);
+  display: flex;
+  flex-direction: column;
+  will-change: transform;
+}
+
+.nav {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-height: 0;
+}
+
+/* top row: workspace switcher + search + compose (44px, mt 8) */
+.topRow {
+  height: 44px;
+  margin-top: 8px;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 0 12px;
+}
+.workspaceBtn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 28px;
+  padding: 0 9px 0 5px;
+  border-radius: 10px;
+  min-width: 0;
+}
+.workspaceBtn:hover,
+.workspaceBtn[aria-expanded="true"] {
+  background: var(--color-hover-bg);
+}
+.workspaceAvatar {
+  width: 20px;
+  height: 20px;
+  border-radius: 8px;
+  display: grid;
+  place-items: center;
+  font-size: 11px;
+  font-weight: var(--font-weight-medium);
+  color: #fff;
+  flex-shrink: 0;
+}
+.workspaceName {
+  font-size: var(--font-size-small);
+  font-weight: 550;
+  letter-spacing: -0.00625rem;
+  line-height: 1.4375rem;
+  color: var(--color-text-base);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.topRowSpacer {
+  flex: 1;
+}
+.topIconBtn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  padding: 0 2px;
+  border-radius: var(--radius-rounded);
+  color: var(--color-text-muted);
+}
+.topIconBtn:hover {
+  background: var(--color-hover-bg);
+  --icon-replacement-color: var(--color-text-base);
+}
+.topIconBtn > svg {
+  width: 14px;
+  height: 14px;
+}
+.composeBtn {
+  --icon-default-color: var(--color-text-title);
+}
+
+/* scroll area — 26px pad with the sticky scroll-fade netting −13px (CAPTURED) */
+.scroll {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  padding: 26px 12px 0;
+  scrollbar-gutter: stable;
+  scroll-timeline: --sidebar-content-scroll y;
+}
+/* Linear signature: sticky fade strip, revealed by scroll-driven animation */
+.scrollFade {
+  position: sticky;
+  top: -26px;
+  left: 0;
+  right: 0;
+  height: 26px;
+  margin-top: -39px;
+  z-index: 10;
+  opacity: 0;
+  flex-shrink: 0;
+  display: block;
+  pointer-events: none;
+  background-image: linear-gradient(to bottom, var(--color-bg-sub), transparent);
+}
+@supports (animation-timeline: scroll()) {
+  .scrollFade {
+    animation: sidebarScrollFade linear both;
+    animation-timeline: --sidebar-content-scroll;
+    animation-range: 0px 26px;
+  }
+}
+@keyframes sidebarScrollFade {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+/* nav link row (28px, r8, 13px/500) */
+.link {
+  display: flex;
+  align-items: center;
+  height: 28px;
+  margin: 1px 0;
+  padding-left: 8px;
+  padding-right: 9px;
+  border-radius: var(--radius-row);
+  font-size: var(--font-size-small);
+  font-weight: var(--font-weight-medium);
+  line-height: normal;
+  color: var(--color-text-muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.link:hover,
+/* keep the row highlighted while its menu is open (§6.2) — e.g. "More" */
+.link[data-menu-open="true"] {
+  background: var(--color-hover-bg);
+  color: var(--color-text-base);
+  --icon-replacement-color: var(--color-text-base);
+}
+.link:focus-visible {
+  outline: var(--focus-ring-outline);
+  outline-offset: -1px;
+}
+.link[data-active="true"] {
+  background: var(--color-selected-bg);
+  color: var(--color-text-title);
+  --icon-replacement-color: var(--color-text-title);
+}
+.linkIcon {
+  width: 14px;
+  height: 14px;
+  margin-right: 6px;
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+}
+.linkIcon > svg {
+  width: 14px;
+  height: 14px;
+}
+
+/* section header (12px/500 label-muted, hover disclosure triangle) */
+.section {
+  margin-top: 15px; /* nets the captured 14px gap after the 1px link margin */
+}
+.sectionHeader {
+  display: flex;
+  align-items: center;
+  height: 28px;
+  padding: 0 4px 0 9px;
+  border-radius: var(--radius-row);
+  font-size: var(--font-size-mini);
+  font-weight: var(--font-weight-medium);
+  line-height: normal;
+  color: var(--color-text-muted);
+  width: 100%;
+  text-align: left;
+}
+.sectionHeader:hover {
+  color: var(--color-text-base);
+}
+/* filled triangle marker: apex right at rest, rotated 90° when expanded */
+.sectionChevron {
+  display: inline-flex;
+  margin-left: 2px;
+  margin-top: 1px;
+  opacity: 0;
+  transition: opacity var(--speed-highlightFadeOut) var(--ease-out-quad),
+    transform var(--speed-quickTransition) var(--ease-out-quad);
+}
+.sectionHeader:hover .sectionChevron {
+  opacity: 1;
+}
+.sectionHeader[aria-expanded="true"] .sectionChevron {
+  transform: rotate(90deg);
+}
+.sectionAction {
+  margin-left: auto;
+  opacity: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  border-radius: 6px;
+  color: var(--color-text-faint);
+}
+.sectionRow:hover .sectionAction,
+.sectionAction:focus-visible,
+/* stays visible while its menu is open, otherwise the anchor vanishes (§6.2) */
+.sectionAction[data-menu-open="true"] {
+  opacity: 1;
+}
+.sectionAction:hover,
+.sectionAction[data-menu-open="true"] {
+  background: var(--color-hover-bg);
+  color: var(--color-text-base);
+}
+.sectionRow {
+  display: flex;
+  align-items: center;
+}
+.sectionRow > button:first-child {
+  flex: 1;
+  min-width: 0;
+}
+
+.sectionBody {
+  overflow: hidden;
+  transition:
+    height var(--speed-quickTransition) var(--ease-out-quad),
+    opacity var(--speed-quickTransition) var(--ease-out-quad);
+}
+
+/* team row */
+.teamRow {
+  display: flex;
+  align-items: center;
+  height: 28px;
+  margin: 1px 0;
+  padding-left: 8px;
+  padding-right: 4px;
+  border-radius: var(--radius-row);
+  font-size: var(--font-size-small);
+  font-weight: var(--font-weight-medium);
+  line-height: normal;
+  color: var(--color-text-muted);
+  width: 100%;
+  text-align: left;
+}
+.teamRow:hover {
+  background: var(--color-hover-bg);
+  color: var(--color-text-base);
+}
+.teamIcon {
+  width: 14px;
+  height: 14px;
+  margin-right: 6px;
+  opacity: 0.9;
+  flex-shrink: 0;
+}
+.teamIcon > svg {
+  width: 14px;
+  height: 14px;
+}
+.teamName {
+  flex: 1;
+  min-width: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.teamChevron {
+  display: inline-flex;
+  opacity: 0;
+  color: var(--color-text-faint);
+  transition: opacity var(--speed-highlightFadeOut) var(--ease-out-quad),
+    transform var(--speed-quickTransition) var(--ease-out-quad);
+}
+.teamRow:hover .teamChevron {
+  opacity: 1;
+}
+.teamRow[aria-expanded="true"] .teamChevron {
+  transform: rotate(90deg);
+}
+.teamChildren {
+  overflow: hidden;
+}
+.teamChildLink {
+  composes: link;
+  padding-left: 25px; /* 8 + 19 − 2 → child icon at x=37 (CAPTURED) */
+}
+
+/* Trailing count pill on a team child row (§22 Triage depth). */
+.childCount {
+  margin-left: auto;
+  padding-left: 6px;
+  font-size: var(--font-size-micro);
+  font-weight: var(--font-weight-medium);
+  color: var(--color-text-faint);
+  font-variant-numeric: tabular-nums;
+}
+
+/* resize handle: 7px hit area at right edge, gradient hairline on hover */
+.resizeHandle {
+  position: absolute;
+  right: -5px;
+  top: 14px;
+  bottom: 40px;
+  width: 7px;
+  cursor: col-resize;
+  z-index: var(--z-resize-handle);
+}
+.resizeHandle::after {
+  content: "";
+  position: absolute;
+  left: 3px;
+  top: 0;
+  bottom: 0;
+  width: 1px;
+  opacity: 0;
+  background: linear-gradient(
+    to bottom,
+    lch(100% 0 272 / 0) 0%,
+    lch(100% 0 272 / 0.5) 15%,
+    lch(100% 0 272 / 0.65) 50%,
+    lch(100% 0 272 / 0.5) 85%,
+    lch(100% 0 272 / 0) 100%
+  );
+  transition: opacity var(--speed-highlightFadeOut) var(--ease-out-quad);
+}
+.resizeHandle:hover::after,
+.resizeHandle[data-resizing="true"]::after {
+  opacity: 1;
+}
+
+/* ================================================================
+ * Narrow viewports (≤1023px): off-canvas drawer.
+ * At 390px the in-flow 244px panel left ~146px for the content, which
+ * clipped every list row — so below the breakpoint the panel slides out of
+ * view and the spacer that reserved its width collapses.
+ * Breakpoint mirrors NARROW_QUERY in shell/sidebarDrawer.ts.
+ * ================================================================ */
+@media (max-width: 1023px) {
+  .spacer {
+    display: none;
+  }
+
+  .panel {
+    /* Full-height sheet with its own ground: over the content card it must
+       be opaque, where in the wide layout it sat on the window ground. */
+    background: var(--bg-color);
+    border-right: var(--thin-pixel) solid var(--color-border-solid);
+    box-shadow: var(--shadow-medium);
+    transform: translateX(-100%);
+    visibility: hidden;
+    transition:
+      transform 220ms var(--ease-out-quad),
+      visibility 0s linear 220ms;
+  }
+
+  [data-drawer-open="true"] .panel {
+    transform: translateX(0);
+    visibility: visible;
+    transition:
+      transform 220ms var(--ease-out-quad),
+      visibility 0s;
+  }
+
+  /* Dragging the width is a pointer affordance for a permanent sidebar; a
+     drawer is sized by the viewport. */
+  .resizeHandle {
+    display: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .panel {
+    transition-duration: 0s;
+  }
+}

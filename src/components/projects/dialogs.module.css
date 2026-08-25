@@ -1,0 +1,244 @@
+/*
+ * Project dialogs — New project (§10.1), Save view (§11.2 "Save as view"),
+ * Add document or link (§6.4 Resources), Project update composer (§10.2).
+ * Same rhythm as the Views create dialog: 12px header/footer bands with
+ * hairline separators, 12px body gaps, tokens only, cursor default.
+ */
+
+.dialog {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 16px;
+  border-bottom: var(--thin-pixel) solid var(--color-border-thin);
+}
+
+.title {
+  font-size: var(--font-size-small);
+  font-weight: var(--font-weight-medium);
+  color: var(--color-text-base);
+}
+
+.headerMeta {
+  margin-left: auto;
+  font-size: var(--font-size-mini);
+  color: var(--color-text-muted);
+}
+
+.body {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 16px;
+  max-height: min(70vh, 640px);
+  overflow-y: auto;
+}
+
+.titleRow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+
+.iconPreview {
+  display: inline-grid;
+  place-items: center;
+  width: 30px;
+  height: 30px;
+  flex: none;
+  border-radius: var(--control-border-radius);
+  background: var(--color-bg-shade);
+  font-size: 16px;
+  line-height: 1;
+}
+
+.titleRow > input {
+  flex: 1;
+  min-width: 0;
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 0;
+}
+
+.fieldLabel {
+  font-size: var(--font-size-mini);
+  font-weight: var(--font-weight-medium);
+  color: var(--color-text-muted);
+}
+
+.choiceRow {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.choice {
+  display: inline-grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  border-radius: var(--control-border-radius);
+  background: var(--color-bg-shade);
+  font-size: 15px;
+  line-height: 1;
+  transition: background-color var(--speed-highlightFadeOut) var(--ease-out-quad);
+}
+
+@media (any-hover: hover) and (any-pointer: fine) {
+  .choice:hover {
+    background: var(--color-control-hover);
+    transition-duration: var(--speed-highlightFadeIn);
+  }
+}
+
+.choice[data-selected="true"] {
+  box-shadow: 0 0 0 1px var(--color-accent) inset;
+}
+
+.swatch {
+  width: 14px;
+  height: 14px;
+  border-radius: var(--radius-rounded);
+  background: var(--swatch-color);
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: 92px minmax(0, 1fr);
+  align-items: center;
+  gap: 8px 12px;
+}
+
+.gridLabel {
+  font-size: var(--font-size-mini);
+  font-weight: var(--font-weight-normal);
+  color: var(--color-text-muted);
+}
+
+.dateInput {
+  height: 30px;
+  padding: 0 10px;
+  border-radius: var(--radius-row);
+  border: var(--thin-pixel) solid var(--color-border-solid);
+  background: var(--color-bg-elevated);
+  color: var(--color-text-base);
+  font-family: inherit;
+  font-size: var(--font-size-small);
+  outline: none;
+  color-scheme: dark;
+}
+
+.dateInput:focus-visible {
+  border-color: var(--color-accent);
+}
+
+.teamGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+  gap: 4px 12px;
+}
+
+.teamRow {
+  display: flex;
+  align-items: center;
+  min-height: 24px;
+  min-width: 0;
+}
+
+.footer {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
+  padding: 12px 16px;
+  border-top: var(--thin-pixel) solid var(--color-border-thin);
+}
+
+/* ---------- update composer ---------- */
+
+.healthRow {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.healthChoice {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 28px;
+  padding: 0 10px;
+  border-radius: var(--radius-rounded);
+  background: var(--color-bg-shade);
+  font-size: var(--font-size-mini);
+  font-weight: var(--font-weight-medium);
+  color: var(--color-text-muted);
+  transition-property: background-color, color;
+  transition-duration: var(--speed-highlightFadeOut);
+  transition-timing-function: var(--ease-out-quad);
+}
+
+@media (any-hover: hover) and (any-pointer: fine) {
+  .healthChoice:hover {
+    background: var(--color-control-hover);
+    color: var(--color-text-base);
+    transition-duration: var(--speed-highlightFadeIn);
+  }
+}
+
+.healthChoice[aria-pressed="true"] {
+  color: var(--color-text-base);
+  box-shadow: 0 0 0 1px var(--color-border-hover) inset;
+}
+
+.composer {
+  min-height: 120px;
+  padding: 10px 12px;
+  border-radius: var(--radius-row);
+  border: var(--thin-pixel) solid var(--color-border-solid);
+  background: var(--color-bg-shade);
+}
+
+.composer :global(.ProseMirror) {
+  min-height: 100px;
+  font-size: var(--font-size-small);
+  font-weight: var(--font-weight-normal);
+  line-height: 1.6;
+  color: var(--color-text-base);
+  outline: none;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.composer :global(.ProseMirror > * + *) {
+  margin-top: 8px;
+}
+
+.composer :global(.ProseMirror ul) {
+  list-style: disc;
+  padding-left: 20px;
+}
+
+.composer :global(.ProseMirror ol) {
+  list-style: decimal;
+  padding-left: 20px;
+}
+
+.composer :global(.ProseMirror p.is-editor-empty:first-child::before) {
+  content: attr(data-placeholder);
+  float: left;
+  height: 0;
+  pointer-events: none;
+  color: var(--color-text-faint);
+}

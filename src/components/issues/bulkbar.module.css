@@ -1,0 +1,62 @@
+/*
+ * Bulk-actions toolbar — MASTER_PROMPT.md §6.7.
+ * Floating bottom-center elevated bar inside the content card; enter
+ * animation fade + rise 4px 120ms ease-out-quad (§6.6 vocabulary).
+ */
+
+.bar {
+  position: absolute;
+  bottom: 16px;
+  left: 0;
+  right: 0;
+  margin-inline: auto;
+  width: max-content;
+  max-width: calc(100% - 32px);
+  z-index: 10;
+
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  height: 40px;
+  padding: 0 12px;
+
+  background: var(--color-bg-elevated);
+  border: 1px solid var(--color-border-thin);
+  border-radius: 8px;
+  box-shadow: var(--shadow-medium);
+
+  cursor: default;
+  user-select: none;
+  white-space: nowrap;
+
+  animation: bulkbarEnter 120ms var(--ease-out-quad);
+}
+
+.count {
+  font-size: var(--font-size-small);
+  font-weight: var(--font-weight-medium);
+  color: var(--color-text-base);
+}
+
+.hint {
+  display: inline-flex;
+  align-items: center;
+  color: var(--color-text-muted);
+}
+
+@keyframes bulkbarEnter {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .bar {
+    animation: none;
+  }
+}

@@ -1,0 +1,185 @@
+/*
+ * Button primitives — MASTER_PROMPT.md §7.1 (CAPTURED values).
+ * Heights 24/28/32(/44 onboarding); min-width = height; pill radius 9999px,
+ * rect radius 4px; ring drawn as box-shadow on ::after, never border;
+ * hover idiom §2.4 (0s in, .15s out) gated on any-hover/any-pointer.
+ */
+
+.button {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  flex-shrink: 0;
+  white-space: nowrap;
+  font-family: inherit;
+  font-weight: var(--font-weight-medium);
+  color: var(--color-text-muted);
+  background: transparent;
+  transition-property: background-color, color, opacity;
+  transition-duration: var(--speed-highlightFadeOut);
+  transition-timing-function: var(--ease-out-quad);
+}
+
+/* Border as ring shadow on ::after (0 0 0 1px ring + shadow-low), never border */
+.button::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  pointer-events: none;
+  box-shadow: var(--btn-overlay-shadow, none);
+  transition: box-shadow var(--speed-highlightFadeOut) var(--ease-out-quad);
+}
+
+.pill {
+  border-radius: var(--radius-rounded);
+}
+.rect {
+  border-radius: var(--control-border-radius);
+}
+
+/* ---- sizes: min-width = height (CAPTURED) ---- */
+.size24 {
+  height: 24px;
+  min-width: 24px;
+  padding: 0 8px;
+  font-size: var(--font-size-mini); /* 12px/500 */
+}
+.size28 {
+  height: 28px;
+  min-width: 28px;
+  padding: 0 10px 0 8px; /* CAPTURED labelled pill: 8px left, 10px right */
+  font-size: var(--font-size-mini); /* 12px/500 — standard chrome */
+}
+.size32 {
+  height: 32px;
+  min-width: 32px;
+  padding: 0 12px;
+  font-size: var(--font-size-small); /* 13px/500 */
+}
+.size44 {
+  /* onboarding pill: h44, padding-inline 18px, 13px/500 */
+  height: 44px;
+  min-width: 44px;
+  padding: 0 18px;
+  font-size: var(--font-size-small);
+}
+
+.iconOnly {
+  padding: 0 2px;
+}
+
+/* icon slot: 14×14 in small chrome (≤28), 16×16 in 32/44 */
+.icon {
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+}
+.size24 .icon,
+.size28 .icon {
+  width: 14px;
+  height: 14px;
+}
+.size32 .icon,
+.size44 .icon {
+  width: 16px;
+  height: 16px;
+}
+/* CAPTURED: the slot clamps its svg — 14px glyphs in small chrome */
+.size24 .icon > svg,
+.size28 .icon > svg {
+  width: 14px;
+  height: 14px;
+}
+.size32 .icon > svg,
+.size44 .icon > svg {
+  width: 16px;
+  height: 16px;
+}
+
+/* ---- ghost: transparent, hover tertiary-hover bg + text brightens ---- */
+.ghost {
+  background: transparent;
+  color: var(--color-text-muted);
+}
+@media (any-hover: hover) and (any-pointer: fine) {
+  .ghost:not(:disabled):hover {
+    transition-duration: var(--speed-highlightFadeIn);
+    background: var(--color-control-hover);
+    color: var(--color-text-base);
+    --icon-replacement-color: var(--color-text-base);
+  }
+}
+.ghost:not(:disabled):active {
+  transition-duration: var(--speed-highlightFadeIn);
+  background: var(--color-control-selected);
+  color: var(--color-text-base);
+  --icon-replacement-color: var(--color-text-base);
+}
+/* menu-open persistence (§6.2): trigger keeps highlighted state */
+.ghost[data-menu-open="true"] {
+  background: var(--color-control-hover);
+  color: var(--color-text-base);
+  --icon-replacement-color: var(--color-text-base);
+}
+.ghost[data-active="true"] {
+  background: var(--color-control-selected);
+  color: var(--color-text-title);
+  --icon-replacement-color: var(--color-text-title);
+}
+
+/* ---- secondary: elevated bg + ring; hover ring brightens ---- */
+.secondary {
+  background: var(--color-bg-elevated);
+  color: var(--color-text-base);
+  --btn-overlay-shadow: 0 0 0 1px var(--color-border-solid), var(--shadow-low);
+}
+@media (any-hover: hover) and (any-pointer: fine) {
+  .secondary:not(:disabled):hover {
+    transition-duration: var(--speed-highlightFadeIn);
+    --btn-overlay-shadow: 0 0 0 1px var(--color-border-hover), var(--shadow-low);
+  }
+  .secondary:not(:disabled):hover::after {
+    transition-duration: var(--speed-highlightFadeIn);
+  }
+}
+.secondary:not(:disabled):active,
+.secondary[data-menu-open="true"],
+.secondary[data-active="true"] {
+  --btn-overlay-shadow: 0 0 0 1px var(--color-border-hover), var(--shadow-low);
+  color: var(--color-text-title);
+}
+
+/* ---- primary: accent bg, white-ish label, hover slightly lighter ---- */
+.primary {
+  background: var(--color-accent);
+  color: var(--color-text-title);
+  --icon-replacement-color: var(--color-text-title);
+  --icon-default-color: var(--color-text-title);
+}
+@media (any-hover: hover) and (any-pointer: fine) {
+  .primary:not(:disabled):hover {
+    transition-duration: var(--speed-highlightFadeIn);
+    background: var(--color-accent-hover);
+  }
+}
+.primary:not(:disabled):active,
+.primary[data-menu-open="true"],
+.primary[data-active="true"] {
+  transition-duration: var(--speed-highlightFadeIn);
+  background: var(--color-accent-hover);
+}
+
+/* ---- disabled ---- */
+.button:disabled {
+  opacity: 0.6;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .button,
+  .button::after {
+    transition-duration: 0s;
+  }
+}

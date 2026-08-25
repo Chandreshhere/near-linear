@@ -1,0 +1,12 @@
+/*
+ * Context-menu boundary (MASTER_PROMPT.md §6.3). Radix's ContextMenu anchors
+ * at the POINTER (a virtual element), never at the trigger's box, so this
+ * wrapper can — and must — generate no box of its own: it sits between a list
+ * and its rows, and any real box there would break the row grid.
+ *
+ * Owned here rather than in menu.module.css so the dropdown surface's own
+ * anchoring rules (which do need a measurable trigger) can never take it away.
+ */
+.triggerWrap {
+  display: contents;
+}

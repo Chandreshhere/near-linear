@@ -1,0 +1,228 @@
+/*
+ * Design tokens — values measured from the 2026-08-24 reference captures.
+ * Evidence tier: CAPTURED unless noted. See MASTER_PROMPT.md §2.
+ * Dark is the reference theme (html.dark); light derives from the same contract.
+ */
+
+:root {
+  /* ---- boot palette (light defaults; html.dark overrides) ---- */
+  --bg-sidebar: #efeff0;
+  --bg-base: #f9f9fa;
+  --bg-border: #e2e2e2;
+  --content-color: #b0b5c0;
+  --content-highlight-color: #23252a;
+
+  /* Boot-script-settable aliases (splashScreenConfig may override inline) */
+  --bg-color: var(--bg-sidebar);
+  --bg-sidebar-color: var(--bg-sidebar);
+  --bg-base-color: var(--bg-base);
+  --bg-border-color: var(--bg-border);
+
+  /* ---- layout ---- */
+  --sidebar-width: 244px;
+  --agent-toolbar-height: 0px; /* 28px set at runtime; forced 0 <=1023px */
+  --header-height: 57px;
+  --scrollbar-width: 12px; /* 0 with overlay scrollbars (probe sets it) */
+  --scrollbar-min-size: 32px;
+  --thin-pixel: 1px;
+
+  /* ---- typography ---- */
+  --font-regular: var(--font-inter), "Inter", "SF Pro Display", -apple-system,
+    BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen, Ubuntu, Cantarell,
+    "Open Sans", "Helvetica Neue", sans-serif;
+  --font-monospace: var(--font-mono), "JetBrains Mono", "SFMono Regular",
+    Consolas, "Liberation Mono", Menlo, Courier, monospace;
+  --font-emoji: "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol",
+    "Twemoji Mozilla", "Noto Color Emoji", "Android Emoji";
+
+  --font-size-micro: 0.6875rem;
+  --font-size-mini: 0.75rem;
+  --font-size-small: 0.8125rem;
+  --font-size-regular: 0.9375rem;
+  --font-size-large: 1.125rem;
+  --font-size-title3: 1.25rem;
+  --font-size-title2: 1.5rem;
+  --font-size-title1: 2.25rem;
+
+  --font-weight-light: 300;
+  --font-weight-normal: 450;
+  --font-weight-medium: 500;
+  --font-weight-semibold: 600;
+  --font-weight-bold: 700;
+
+  /* ---- motion ---- */
+  --speed-highlightFadeIn: 0s;
+  --speed-highlightFadeOut: 0.15s;
+  --speed-quickTransition: 0.1s;
+  --speed-regularTransition: 0.25s;
+  --speed-slowTransition: 0.35s;
+
+  --ease-in-quad: cubic-bezier(0.55, 0.085, 0.68, 0.53);
+  --ease-in-cubic: cubic-bezier(0.55, 0.055, 0.675, 0.19);
+  --ease-in-quart: cubic-bezier(0.895, 0.03, 0.685, 0.22);
+  --ease-in-quint: cubic-bezier(0.755, 0.05, 0.855, 0.06);
+  --ease-in-expo: cubic-bezier(0.95, 0.05, 0.795, 0.035);
+  --ease-in-circ: cubic-bezier(0.6, 0.04, 0.98, 0.335);
+  --ease-out-quad: cubic-bezier(0.25, 0.46, 0.45, 0.94);
+  --ease-out-cubic: cubic-bezier(0.215, 0.61, 0.355, 1);
+  --ease-out-quart: cubic-bezier(0.165, 0.84, 0.44, 1);
+  --ease-out-quint: cubic-bezier(0.23, 1, 0.32, 1);
+  --ease-out-expo: cubic-bezier(0.19, 1, 0.22, 1);
+  --ease-out-circ: cubic-bezier(0.075, 0.82, 0.165, 1);
+  --ease-in-out-quad: cubic-bezier(0.455, 0.03, 0.515, 0.955);
+  --ease-in-out-cubic: cubic-bezier(0.645, 0.045, 0.355, 1);
+  --ease-in-out-quart: cubic-bezier(0.77, 0, 0.175, 1);
+  --ease-in-out-quint: cubic-bezier(0.86, 0, 0.07, 1);
+  --ease-in-out-expo: cubic-bezier(1, 0, 0, 1);
+  --ease-in-out-circ: cubic-bezier(0.785, 0.135, 0.15, 0.86);
+  --ease-sidebar-resize: cubic-bezier(0.43, 0.07, 0.59, 0.94); /* .22s */
+  --ease-shell: cubic-bezier(0.45, 0, 0.55, 1); /* frame margins .45s */
+  --ease-zoom: cubic-bezier(0.38, 0.01, 0.33, 1); /* lightbox .25s */
+
+  /* ---- radii ---- */
+  --control-border-radius: 4px;
+  --radius-row: 8px;
+  --radius-card: 10px;
+  --radius-panel: 12px;
+  --radius-rounded: 9999px;
+  --editor-block-radius: 6px;
+
+  /* ---- z layers ---- */
+  --z-sidebar: 96;
+  --z-agent-toolbar: 97;
+  --z-resize-handle: 200;
+  --z-agent-panel: 250;
+  --z-overlay: 500;
+  --z-overlay-2: 550;
+  --z-toast-layer: 581;
+  --z-lightbox: 1300;
+  --z-splash: 99999;
+
+  /* ---- cursor policy: default arrow on controls, pointer only external ---- */
+  --pointer: default;
+  --external: pointer;
+
+  /* ---- focus ---- */
+  --focus-ring-width: 1px;
+  --focus-ring-color: var(--color-accent);
+  --focus-ring-outline: var(--focus-ring-width) solid var(--focus-ring-color);
+
+  /* ================================================================
+   * SEMANTIC PALETTE — LIGHT (derived from the captured contract)
+   * ================================================================ */
+  --color-accent: lch(47.918% 59.303 288.421); /* indigo — same both themes */
+  --color-accent-hover: lch(52% 59.303 288.421);
+  --color-link: lch(44% 70 288.421);
+
+  --color-text-title: lch(9% 1 272);
+  --color-text-base: lch(19% 1.2 272);
+  --color-text-muted: lch(44% 1.2 272);
+  --color-text-faint: lch(64% 1.2 272);
+
+  --color-bg-sub: lch(94.5% 0.4 272);
+  --color-bg-surface: lch(97.8% 0.2 272);
+  --color-bg-elevated: #ffffff;
+  --color-bg-shade: lch(93.5% 0.85 272);
+  --color-bg-focus: lch(90% 0.85 272);
+
+  --color-border-thin: lch(89.5% 1.48 272);
+  --color-border-solid: lch(86.5% 1.48 272);
+  --color-border-hover: lch(80% 1.48 272);
+  --color-input-border-hover: lch(76% 6.48 272);
+
+  --color-hover-bg: lch(93% 1.04 272);
+  --color-selected-bg: lch(90.5% 1 272);
+  --color-control-hover: lch(92.8% 0.6 272);
+  --color-control-selected: lch(90.2% 1 272);
+
+  --row-applied-bg: lch(93.6% 0.85 272);
+  --row-keyboard-border: lch(74% 19.952 286.445);
+
+  --selection-bg: lch(47.918% 59.303 288.421 / 0.25);
+  --selection-bg-inactive: lch(40% 1.2 272 / 0.15);
+
+  --icon-default-color: lch(45% 1.2 272);
+  --icon-faint-color: lch(66% 1.2 272);
+
+  --color-red: lch(48% 73 29);
+  --color-red-text: lch(44% 80 29);
+  --color-orange: #f2994a;
+  --color-yellow: lch(70% 90 85);
+  --color-gray-status: #a8a9ad;
+  --color-callout: #26b5ce;
+  --color-green: lch(72% 55 150);
+  --color-green-ring: lch(40% 40 150 / 0.5);
+
+  /* dim layer behind dialogs */
+  --color-scrim: rgba(0, 0, 0, 0.4);
+
+  /* toggle track (CAPTURED checked/hover values) */
+  --color-toggle-track: lch(47.551% 0.913 271.998);
+  --color-toggle-track-hover: lch(56.238% 1.008 271.999);
+
+  --shadow-low: 0 1px 2px rgba(0, 0, 0, 0.06), 0 2px 8px rgba(0, 0, 0, 0.04);
+  --shadow-medium: 0 4px 12px rgba(0, 0, 0, 0.1), 0 1px 3px rgba(0, 0, 0, 0.08);
+  --shadow-card: 0 3px 6px -2px #00000005, 0 1px 1px #0000000a;
+
+  --header-color: transparent;
+}
+
+/* ================================================================
+ * DARK THEME — the reference (all goldens compare against dark)
+ * Surface ladder (CAPTURED): L = 2.595 -> 5.52 -> 6.307 -> 7.32 -> 9.232
+ *  -> 9.345 -> 11.033 -> 13.62 -> 14.16 -> 16.32 -> 17.718 -> 20.64, hue 272.
+ * ================================================================ */
+html.dark {
+  --bg-sidebar: #09090a;
+  --bg-base: #121213;
+  --bg-border: #212224;
+  --content-color: #6b6f76;
+  --content-highlight-color: #ffffff;
+
+  --color-text-title: lch(100% 0 272);
+  --color-text-base: lch(91% 1.2 272);
+  --color-text-muted: lch(61.803% 1.2 272);
+  --color-text-faint: lch(36.975% 1.2 272);
+
+  --color-link: lch(57.028% 70 288.421);
+
+  --color-bg-sub: lch(2.595% 0.4 272);
+  --color-bg-surface: lch(5.52% 0.4 272);
+  --color-bg-elevated: lch(9.232% 0.85 272);
+  --color-bg-shade: lch(7.32% 0.85 272);
+  --color-bg-focus: lch(13.62% 0.85 272);
+
+  --color-border-thin: lch(14.16% 1.48 272);
+  --color-border-solid: lch(16.32% 1.48 272);
+  --color-border-hover: lch(20.64% 1.48 272);
+  --color-input-border-hover: lch(24.32% 6.48 272);
+
+  --color-hover-bg: lch(17.718% 1.043 272);
+  --color-selected-bg: lch(16.706% 0.979 272);
+  --color-control-hover: lch(14.006% 0.593 272);
+  --color-control-selected: lch(16.706% 0.979 272);
+
+  --row-applied-bg: lch(9.345% 0.85 272);
+  --row-keyboard-border: lch(19.701% 19.952 286.445);
+
+  --selection-bg: lch(47.918% 59.303 288.421 / 0.4);
+  --selection-bg-inactive: lch(61.803% 1.2 272 / 0.2);
+
+  --icon-default-color: lch(60.621% 1.2 272);
+  --icon-faint-color: lch(36.975% 1.2 272);
+
+  --color-red: lch(58% 73 29);
+  --color-red-text: lch(80% 80 29);
+  --color-gray-status: #d7d8db;
+
+  --shadow-low: 0 1px 2px rgba(0, 0, 0, 0.35), 0 2px 10px rgba(0, 0, 0, 0.25);
+  --shadow-medium: 0 4px 12px rgba(0, 0, 0, 0.45), 0 1px 3px rgba(0, 0, 0, 0.4);
+  --shadow-card: 0 4px 4px -1px #0000000a, 0 1px 1px 0 #00000014;
+}
+
+/* Hairline borders on retina */
+@media (min-resolution: 192dpi) {
+  :root {
+    --thin-pixel: 0.5px;
+  }
+}

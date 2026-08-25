@@ -1,0 +1,491 @@
+/*
+ * Team Home — MASTER_PROMPT.md §10.6, video-timeline-1 f0030.
+ * Breadcrumb chip + star + ⋯ in the 57px band, pill tabs below, a centered
+ * 720px content column, and a 280px right rail of §7.8 cards.
+ * Tokens only; cursor stays the default arrow (§2.4 pointer policy).
+ */
+
+/* ================= header row A ================= */
+
+.crumbRow {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  min-width: 0;
+}
+
+/* Chip: 14px tinted team icon + 13px name. */
+.crumbChip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 24px;
+  padding: 0 6px;
+  margin-right: 2px;
+  border-radius: var(--control-border-radius);
+  min-width: 0;
+}
+
+.crumbIcon {
+  display: grid;
+  place-items: center;
+  width: 14px;
+  height: 14px;
+  flex-shrink: 0;
+  opacity: 0.9;
+}
+
+.crumbName {
+  font-size: var(--font-size-small); /* 13px */
+  font-weight: var(--font-weight-medium);
+  color: var(--color-text-base);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Boot skeleton in place of the team name (shimmer §6.6). */
+.crumbSkeleton {
+  width: 72px;
+  height: 13px;
+  border-radius: var(--control-border-radius);
+  background: linear-gradient(
+    90deg,
+    var(--color-bg-shade) 25%,
+    var(--color-hover-bg) 50%,
+    var(--color-bg-shade) 75%
+  );
+  background-size: 200% 100%;
+  animation: crumbShimmer 1.4s ease infinite;
+}
+@keyframes crumbShimmer {
+  from {
+    background-position: 150% 0;
+  }
+  to {
+    background-position: -50% 0;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .crumbSkeleton {
+    animation: none;
+  }
+}
+
+/* 24px round chrome buttons riding next to the crumb. */
+.starBtn,
+.crumbAction {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  flex-shrink: 0;
+  border-radius: var(--radius-rounded);
+  color: var(--color-text-muted);
+  transition-property: background-color, color;
+  transition-duration: var(--speed-highlightFadeOut);
+  transition-timing-function: var(--ease-out-quad);
+}
+.starBtn[data-on="true"] {
+  color: var(--color-yellow);
+}
+.starBtn:focus-visible,
+.crumbAction:focus-visible {
+  outline: var(--focus-ring-outline);
+  outline-offset: 1px;
+}
+@media (any-hover: hover) and (any-pointer: fine) {
+  .starBtn:hover,
+  .crumbAction:hover,
+  .crumbAction[data-menu-open="true"] {
+    background: var(--color-control-hover);
+    color: var(--color-text-base);
+    --icon-replacement-color: var(--color-text-base);
+    transition-duration: var(--speed-highlightFadeIn);
+  }
+  .starBtn[data-on="true"]:hover {
+    color: var(--color-yellow);
+  }
+}
+
+/* ================= body: scroller + rail ================= */
+
+.body {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  align-items: stretch;
+}
+
+/* Paired with shell .contentScroller — row flex children need min-width: 0. */
+.scroller {
+  min-width: 0;
+}
+
+.column {
+  max-width: 720px;
+  margin: 0 auto;
+  padding: 48px 24px 64px;
+}
+
+/* ================= hero ================= */
+
+.hero {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  min-width: 0;
+}
+
+.heroIcon {
+  display: grid;
+  place-items: center;
+  width: 40px;
+  height: 40px;
+  flex-shrink: 0;
+}
+
+.heroTitle {
+  font-size: var(--font-size-title2); /* 24px */
+  font-weight: var(--font-weight-semibold); /* 600 */
+  line-height: 1.2;
+  letter-spacing: -0.01em;
+  color: var(--color-text-title);
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* "Add a description…" affordance under the hero — and, once the team has
+   one, the rendered description itself (same box, so the swap to the
+   textarea below does not shift the layout). */
+.descriptionPlaceholder {
+  display: block;
+  width: 100%;
+  margin-top: 14px;
+  margin-left: -6px;
+  padding: 4px 6px;
+  border-radius: var(--editor-block-radius);
+  font-size: var(--font-size-regular); /* 15px */
+  font-weight: var(--font-weight-normal);
+  line-height: 1.6;
+  color: var(--color-text-faint);
+  text-align: left;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  transition: background-color var(--speed-highlightFadeOut) var(--ease-out-quad);
+}
+.descriptionFilled {
+  color: var(--color-text-base);
+}
+.descriptionPlaceholder:focus-visible {
+  outline: var(--focus-ring-outline);
+  outline-offset: 1px;
+}
+@media (any-hover: hover) and (any-pointer: fine) {
+  .descriptionPlaceholder:hover {
+    background: var(--color-control-hover);
+    color: var(--color-text-muted);
+    transition-duration: var(--speed-highlightFadeIn);
+  }
+  .descriptionFilled:hover {
+    color: var(--color-text-base);
+  }
+}
+
+/* The editing state of the same box: autosized, no scrollbar, no chrome. */
+.descriptionInput {
+  display: block;
+  width: 100%;
+  margin-top: 14px;
+  margin-left: -6px;
+  padding: 4px 6px;
+  border: none;
+  border-radius: var(--editor-block-radius);
+  background: var(--color-control-hover);
+  font: inherit;
+  font-size: var(--font-size-regular); /* 15px */
+  line-height: 1.6;
+  color: var(--color-text-base);
+  resize: none;
+  overflow: hidden;
+}
+.descriptionInput:focus-visible {
+  outline: var(--focus-ring-outline);
+  outline-offset: 1px;
+}
+.descriptionInput::placeholder {
+  color: var(--color-text-faint);
+}
+
+/* ================= team resources ================= */
+
+.section {
+  margin-top: 44px;
+}
+
+.sectionTitle {
+  font-size: var(--font-size-small); /* 13px */
+  font-weight: var(--font-weight-medium); /* 500 */
+  color: var(--color-text-base);
+}
+
+.sectionHint {
+  margin-top: 4px;
+  font-size: var(--font-size-mini); /* 12px */
+  font-weight: var(--font-weight-normal);
+  color: var(--color-text-muted);
+}
+
+.sectionActions {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+/* A <Link> wearing the secondary-button shape: navigation must stay an <a>
+   (status line, ⌘-click) but read as the button next to it. */
+.linkButton {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 28px;
+  padding: 0 10px;
+  border-radius: var(--radius-rounded);
+  background: var(--color-bg-quaternary, var(--color-bg-shade));
+  box-shadow: inset 0 0 0 var(--thin-pixel) var(--color-border-thin);
+  font-size: var(--font-size-small); /* 13px */
+  font-weight: var(--font-weight-medium);
+  color: var(--color-text-base);
+  white-space: nowrap;
+  transition: background-color var(--speed-highlightFadeOut) var(--ease-out-quad);
+}
+.linkButton:focus-visible {
+  outline: var(--focus-ring-outline);
+  outline-offset: 1px;
+}
+@media (any-hover: hover) and (any-pointer: fine) {
+  .linkButton:hover {
+    background: var(--color-control-hover);
+    transition-duration: var(--speed-highlightFadeIn);
+  }
+}
+
+/* ---- resource rows (same anatomy as a project's Resources section) ---- */
+
+.resourceList {
+  margin-top: 12px;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.resourceRow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 32px;
+  padding: 0 6px;
+  margin: 0 -6px;
+  border-radius: var(--radius-row);
+  color: var(--color-text-muted);
+  min-width: 0;
+}
+@media (any-hover: hover) and (any-pointer: fine) {
+  .resourceRow:hover {
+    background: var(--color-hover-bg);
+  }
+}
+
+.resourceLink {
+  flex: 1;
+  min-width: 0;
+  font-size: var(--font-size-small); /* 13px */
+  font-weight: var(--font-weight-normal);
+  color: var(--color-text-base);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.resourceLink:hover {
+  text-decoration: underline;
+}
+.resourceLink:focus-visible {
+  outline: var(--focus-ring-outline);
+  outline-offset: 1px;
+  border-radius: var(--control-border-radius);
+}
+
+/* ---- members tab ---- */
+
+.memberGrid {
+  margin-top: 16px;
+  list-style: none;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 8px;
+}
+
+.memberCard {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+  padding: 10px 12px;
+  border-radius: var(--radius-card);
+  background: var(--color-bg-shade);
+  box-shadow: inset 0 0 0 var(--thin-pixel) var(--color-border-thin);
+}
+
+.memberCardText {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.memberCardName {
+  font-size: var(--font-size-small); /* 13px */
+  font-weight: var(--font-weight-medium);
+  color: var(--color-text-base);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.memberCardSub {
+  font-size: var(--font-size-mini); /* 12px */
+  color: var(--color-text-muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* ================= placeholder tabs ================= */
+
+.comingSoon {
+  border: var(--thin-pixel) solid var(--color-border-thin);
+  border-radius: var(--radius-card);
+  background: var(--color-bg-shade);
+  padding: 24px;
+}
+
+.comingSoonTitle {
+  font-size: var(--font-size-regular); /* 15px */
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-text-title);
+}
+
+.comingSoonBody {
+  margin-top: 6px;
+  font-size: var(--font-size-small);
+  font-weight: var(--font-weight-normal);
+  line-height: 1.6;
+  color: var(--color-text-muted);
+}
+
+/* ================= right rail (§7.8 cards) ================= */
+
+.rail {
+  width: 280px;
+  flex: none;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  overflow-y: auto;
+  scrollbar-gutter: stable;
+  padding: 12px 12px 12px 0;
+}
+
+.card {
+  flex: none;
+  border: var(--thin-pixel) solid var(--color-border-thin);
+  border-radius: var(--radius-card);
+  background: var(--color-bg-elevated);
+  box-shadow: var(--shadow-low);
+  padding: 12px;
+}
+
+.cardTitle {
+  font-size: var(--font-size-small); /* 13px */
+  font-weight: var(--font-weight-medium);
+  color: var(--color-text-muted);
+  white-space: nowrap;
+}
+
+/* ---- Members ---- */
+
+.memberList {
+  margin-top: 8px;
+  list-style: none;
+}
+
+.memberRow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 32px;
+  min-width: 0;
+}
+
+.memberName {
+  font-size: var(--font-size-small); /* 13px */
+  font-weight: var(--font-weight-normal);
+  color: var(--color-text-base);
+  min-width: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* ---- Go to ---- */
+
+.goList {
+  margin-top: 6px;
+  display: flex;
+  flex-direction: column;
+}
+
+.goRow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  height: 28px;
+  padding: 0 6px;
+  margin: 0 -6px;
+  border-radius: var(--radius-row);
+  color: var(--color-text-base);
+  transition-property: background-color;
+  transition-duration: var(--speed-highlightFadeOut);
+  transition-timing-function: var(--ease-out-quad);
+}
+.goRow:focus-visible {
+  outline: var(--focus-ring-outline);
+  outline-offset: -1px;
+}
+@media (any-hover: hover) and (any-pointer: fine) {
+  .goRow:hover {
+    background: var(--color-hover-bg);
+    --icon-replacement-color: var(--color-text-base);
+    transition-duration: var(--speed-highlightFadeIn);
+  }
+}
+
+.goIcon {
+  display: grid;
+  place-items: center;
+  width: 14px;
+  height: 14px;
+  flex-shrink: 0;
+}
+
+.goLabel {
+  font-size: var(--font-size-small); /* 13px */
+  font-weight: var(--font-weight-normal);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}

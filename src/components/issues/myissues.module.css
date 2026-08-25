@@ -1,0 +1,170 @@
+/*
+ * My Issues — MASTER_PROMPT.md §10.5, video-timeline-1 f0009–f0010.
+ * Row anatomy mirrors the team issue list (§7.5 ListCell geometry) minus the
+ * hover checkbox / ⋯ overflow (cross-team selection is not resolvable yet),
+ * plus a team-key chip because this view spans teams.
+ * Tokens only; hover idiom instant-in / .15s-out gated behind any-hover.
+ */
+
+/* ================= list ================= */
+
+.list {
+  padding-bottom: 32px;
+}
+
+/*
+ * [id max-content][status 20][title 1fr][spacer 8][team chip auto]
+ * [assignee 24][date 60]. Left padding 18px stands in for the checkbox
+ * gutter so rows line up with the team list's optical left edge.
+ */
+.rowGrid {
+  display: grid;
+  grid-template-columns:
+    minmax(64px, max-content) 20px minmax(0, 1fr) 8px auto 24px 60px;
+  column-gap: 8px;
+  align-items: center;
+  height: 100%;
+  padding: 0 16px 0 18px;
+}
+
+.idText {
+  font-size: var(--font-size-mini); /* 12px */
+  font-weight: var(--font-weight-normal);
+  color: var(--color-text-muted);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.cellStatus {
+  display: grid;
+  place-items: center;
+}
+
+.cellTitle {
+  min-width: 0;
+  font-size: var(--font-size-small); /* 13px */
+  font-weight: var(--font-weight-medium); /* 500 */
+  color: var(--color-text-title);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Team key chip — 12px muted, the cross-team scope cue (§10.5). */
+.teamChip {
+  display: inline-flex;
+  align-items: center;
+  height: 20px;
+  padding: 0 6px;
+  border-radius: var(--control-border-radius);
+  background: var(--color-bg-shade);
+  font-size: var(--font-size-mini); /* 12px */
+  font-weight: var(--font-weight-normal);
+  color: var(--color-text-muted);
+  white-space: nowrap;
+  letter-spacing: 0.01em;
+}
+
+.cellAssignee {
+  display: grid;
+  place-items: center;
+}
+
+.assigneePlaceholder {
+  display: grid;
+  place-items: center;
+  color: var(--color-text-faint);
+}
+
+.cellDate {
+  font-size: var(--font-size-mini);
+  font-weight: var(--font-weight-normal);
+  color: var(--color-text-muted);
+  text-align: right;
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+}
+
+/* ================= activity feed ================= */
+
+/* [avatar 14][text 1fr][time auto] on a 36px row. */
+.activityGrid {
+  display: grid;
+  grid-template-columns: 14px minmax(0, 1fr) auto;
+  column-gap: 8px;
+  align-items: center;
+  height: 100%;
+  padding: 0 16px 0 18px;
+}
+
+.actorAvatar {
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  display: inline-grid;
+  place-items: center;
+  overflow: hidden;
+  flex-shrink: 0;
+  font-size: 8px;
+  font-weight: var(--font-weight-medium);
+  line-height: 1;
+  color: #fff;
+  background: var(--color-bg-focus);
+  user-select: none;
+}
+
+.activityText {
+  min-width: 0;
+  font-size: var(--font-size-mini); /* 12px */
+  font-weight: var(--font-weight-normal);
+  color: var(--color-text-muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.actorName {
+  font-weight: var(--font-weight-medium);
+  color: var(--color-text-base);
+}
+
+/* Identifier permalink inside the feed line. */
+.issueLink {
+  font-variant-numeric: tabular-nums;
+  color: var(--color-text-base);
+}
+@media (any-hover: hover) and (any-pointer: fine) {
+  .issueLink:hover {
+    color: var(--color-text-title);
+    text-decoration: underline;
+    text-underline-offset: 2px;
+  }
+}
+
+.activityTime {
+  font-size: var(--font-size-mini);
+  color: var(--color-text-faint);
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+}
+
+/* ================= empty state ================= */
+
+/* Fills the scroller so the empty column centers vertically (f0009). */
+.emptyFill {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Team key chip on a cross-team board card. */
+.cardTeam {
+  margin-left: auto;
+  padding: 0 5px;
+  border-radius: var(--control-border-radius);
+  background: var(--color-bg-shade);
+  font-size: var(--font-size-micro);
+  font-weight: var(--font-weight-medium);
+  color: var(--color-text-muted);
+  white-space: nowrap;
+}

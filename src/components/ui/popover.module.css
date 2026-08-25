@@ -1,0 +1,59 @@
+/*
+ * Popover surface — same captured surface contract as menus
+ * (MASTER_PROMPT.md §6.2–6.3): elevated panel, hairline solid border,
+ * radius 8, shadow-medium, padding 4, min-width 180; enter fade +
+ * drop 2px 120ms ease-out-quad, exit fade 100ms.
+ */
+
+/*
+ * (Removed) boxless trigger wrapper: `display: contents` generates no box, so
+ * the popper anchored at (0,0) and the surface opened in the viewport corner.
+ * Popover.tsx clones the caller's element as the trigger instead.
+ */
+
+.content {
+  background: var(--color-bg-elevated);
+  border: 1px solid var(--color-border-solid);
+  border-radius: 8px;
+  box-shadow: var(--shadow-medium);
+  padding: 4px;
+  min-width: 180px;
+  z-index: var(--z-overlay);
+  outline: none;
+  max-height: var(--radix-popover-content-available-height, 80vh);
+  overflow-y: auto;
+  overflow-x: hidden;
+}
+
+.content[data-state="open"] {
+  animation: popoverEnter 120ms var(--ease-out-quad);
+}
+.content[data-state="closed"] {
+  animation: popoverExit 100ms var(--ease-out-quad) forwards;
+}
+
+@keyframes popoverEnter {
+  from {
+    opacity: 0;
+    transform: translateY(-2px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+@keyframes popoverExit {
+  from {
+    opacity: 1;
+  }
+  to {
+    opacity: 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .content[data-state="open"],
+  .content[data-state="closed"] {
+    animation: none;
+  }
+}

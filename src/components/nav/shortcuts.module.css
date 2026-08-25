@@ -1,0 +1,97 @@
+/*
+ * `?` keyboard-shortcuts window (docs/analysis/research-nav-auth.md §2 — the
+ * canonical in-app list; MASTER_PROMPT.md §12 supplies the registry it mirrors).
+ * 720px dialog: 15px/600 title over a two-column section grid (24px gutter),
+ * 28px rows, keycap chips right-aligned. Body scrolls at 70vh.
+ */
+
+.header {
+  display: flex;
+  align-items: center;
+  padding: 16px 20px 12px;
+  border-bottom: 1px solid var(--color-border-thin);
+}
+
+.title {
+  font-size: var(--font-size-regular); /* 15px */
+  font-weight: var(--font-weight-semibold);
+  line-height: 20px;
+  color: var(--color-text-title);
+}
+
+.body {
+  max-height: 70vh;
+  overflow-y: auto;
+  padding: 12px 20px 20px;
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 24px;
+  align-items: start;
+}
+
+.section {
+  min-width: 0;
+}
+
+.sectionTitle {
+  display: flex;
+  align-items: center;
+  height: 28px;
+  font-size: var(--font-size-micro); /* 11px */
+  font-weight: var(--font-weight-medium);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--color-text-muted);
+}
+
+.row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  height: 28px;
+}
+
+.rowLabel {
+  flex: 1;
+  min-width: 0;
+  font-size: var(--font-size-small);
+  color: var(--color-text-base);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.keys {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  flex-shrink: 0;
+  font-size: var(--font-size-small); /* chips are .75em of the row */
+}
+
+.then {
+  font-size: var(--font-size-mini);
+  color: var(--color-text-faint);
+}
+
+/* live registry section — spans the grid, keeps its own two columns */
+.live {
+  grid-column: 1 / -1;
+}
+
+.liveRows {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  column-gap: 24px;
+}
+
+/* §24 — single column on narrow viewports */
+@media (max-width: 640px) {
+  .grid,
+  .liveRows {
+    grid-template-columns: 1fr;
+  }
+}

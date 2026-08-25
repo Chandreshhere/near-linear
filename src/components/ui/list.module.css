@@ -1,0 +1,193 @@
+/*
+ * List primitives — ListRow / RowCheckbox / GroupHeader.
+ * Values CAPTURED per MASTER_PROMPT.md §6.7, §7.5, §10.6.
+ */
+
+/* ---------- row container (ListCell) ---------- */
+.row {
+  display: block;
+  position: relative;
+  border-radius: var(--radius-row); /* 8px */
+  isolation: isolate;
+  will-change: transform;
+  contain: layout style;
+}
+
+/* Background painted on ::before with an 8px horizontal bleed inset. */
+.row::before {
+  content: "";
+  position: absolute;
+  inset: 0 8px;
+  border-radius: inherit;
+  z-index: -1;
+  /* CAPTURED: box-shadow fades .15s; background-color snaps (0s). */
+  transition-property: box-shadow, background-color;
+  transition-duration: var(--speed-highlightFadeOut), var(--speed-highlightFadeIn);
+}
+
+.row[data-apply-background="true"]::before {
+  background: var(--row-applied-bg);
+}
+
+.row[data-keyboard-active="true"]::before {
+  box-shadow: 0 0 0 1px var(--row-keyboard-border) inset;
+}
+
+/* Hover paints the ::before when the row is not selected (hover idiom §2.4). */
+@media (any-hover: hover) and (any-pointer: fine) {
+  .row:not([data-apply-background="true"]):hover::before {
+    background: var(--color-hover-bg);
+  }
+}
+
+/* Adjoining selected rows merge shared corner radii (§6.7) —
+   zero the shared corners unless the boundary is also a group boundary. */
+.row[data-apply-background="true"]:not([data-last-in-group="true"]):has(
+    + .row[data-apply-background="true"]:not([data-first-in-group="true"])
+  )::before {
+  border-bottom-left-radius: 0;
+  border-bottom-right-radius: 0;
+}
+.row[data-apply-background="true"]:not([data-last-in-group="true"])
+  + .row[data-apply-background="true"]:not([data-first-in-group="true"])::before {
+  border-top-left-radius: 0;
+  border-top-right-radius: 0;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .row::before {
+    transition: none;
+  }
+}
+
+/* ---------- hover-revealed 14px row checkbox ---------- */
+.rowCheckbox {
+  position: relative;
+  width: 14px;
+  height: 14px;
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--control-border-radius);
+  background: transparent;
+  box-shadow: 0 0 0 1px var(--color-border-solid) inset;
+  color: #fff;
+  opacity: 0;
+  transition-property: opacity, background-color, box-shadow;
+  transition-duration: var(--speed-highlightFadeOut);
+  transition-timing-function: var(--ease-out-quad);
+}
+/* Inflated hit area (no layout shift). */
+.rowCheckbox::after {
+  content: "";
+  position: absolute;
+  inset: -5px;
+}
+.rowCheckbox[data-checked="true"] {
+  opacity: 1;
+  background: var(--color-accent);
+  box-shadow: 0 0 0 1px var(--color-accent) inset;
+}
+.rowCheckbox:focus-visible {
+  opacity: 1;
+}
+.rowCheckboxGlyph {
+  width: 12px;
+  height: 12px;
+  fill: currentColor;
+  opacity: 0;
+}
+.rowCheckbox[data-checked="true"] .rowCheckboxGlyph {
+  opacity: 1;
+}
+@media (any-hover: hover) and (any-pointer: fine) {
+  .row:hover .rowCheckbox,
+  .row[data-row-hover="true"] .rowCheckbox,
+  [data-row-hover="true"] .rowCheckbox {
+    opacity: 1;
+    transition-duration: var(--speed-highlightFadeIn);
+  }
+  .rowCheckbox:hover {
+    box-shadow: 0 0 0 1px var(--color-border-hover) inset;
+    transition-duration: var(--speed-highlightFadeIn);
+  }
+  .rowCheckbox[data-checked="true"]:hover {
+    background: var(--color-accent-hover);
+    box-shadow: 0 0 0 1px var(--color-accent-hover) inset;
+  }
+}
+
+/* ---------- grouped-list header ---------- */
+.groupHeader {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  height: 36px;
+  padding: 0 8px;
+  background: var(--color-bg-shade); /* full-bleed */
+}
+.groupIcon {
+  width: 16px;
+  height: 16px;
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+}
+.groupLabel {
+  font-size: var(--font-size-small);
+  font-weight: var(--font-weight-medium);
+  color: var(--color-text-title);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.groupCount {
+  font-size: var(--font-size-small);
+  font-weight: var(--font-weight-normal);
+  color: var(--color-text-muted);
+  font-variant-numeric: tabular-nums;
+}
+
+/* Hover-revealed "+" at far right (24px icon button). */
+.groupAdd {
+  margin-left: auto;
+  width: 24px;
+  height: 24px;
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--radius-rounded);
+  color: var(--color-text-muted);
+  opacity: 0;
+  transition-property: opacity, background-color, color;
+  transition-duration: var(--speed-highlightFadeOut);
+  transition-timing-function: var(--ease-out-quad);
+}
+.groupAdd:focus-visible {
+  opacity: 1;
+}
+.groupAddGlyph {
+  width: 14px;
+  height: 14px;
+  fill: currentColor;
+}
+@media (any-hover: hover) and (any-pointer: fine) {
+  .groupHeader:hover .groupAdd {
+    opacity: 1;
+    transition-duration: var(--speed-highlightFadeIn);
+  }
+  .groupAdd:hover {
+    background: var(--color-control-hover);
+    color: var(--color-text-base);
+    transition-duration: var(--speed-highlightFadeIn);
+  }
+  .groupAdd:active {
+    background: var(--color-control-selected);
+    transition-duration: var(--speed-highlightFadeIn);
+  }
+}

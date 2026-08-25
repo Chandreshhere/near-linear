@@ -1,0 +1,498 @@
+/*
+ * Projects table — docs/analysis/capture-projects.md §1 (grid), §6.2 (column
+ * header row), §6.3 (row anatomy); MASTER_PROMPT.md §10.1.
+ * CAPTURED subgrid table: the outer grid declares the named columns ONCE;
+ * the 32px header row and every 48px project row are
+ * `grid-template-columns: subgrid; grid-column: 1/-1`.
+ * Tokens only; hover idiom §2.4 (instant in via --speed-highlightFadeIn: 0s,
+ * .15s out) gated behind any-hover/any-pointer.
+ */
+
+/* ---------- scroll viewport (both views mount the table inside this) ---------- */
+.viewport {
+  position: relative;
+  flex: 1;
+  min-height: 0;
+  overflow: auto; /* capture: list region overflow-x auto; wrapper scrolls y */
+  scrollbar-gutter: stable;
+  outline: none;
+  padding-bottom: 8px; /* capture: --x-paddingBottom: max(8px, safe-area) */
+}
+
+/* ---------- the grid ---------- */
+.table {
+  display: grid;
+  /* CAPTURED verbatim (§1 “List grid”). */
+  grid-template-columns:
+    [indent] 8px
+    [checkbox] 18px
+    [title] minmax(425px, 2fr)
+    [health] 130px
+    [priority] 68px
+    [lead] 48px
+    [targetDate] 91px
+    [issues] 49px
+    [status] 120px
+    [end-padding] 8px;
+  column-gap: 6px;
+  width: 100%;
+  min-width: 0;
+  grid-auto-rows: max-content;
+  align-content: start;
+}
+
+/* Rows wrapper keeps the captured data-list-wrapper node without breaking
+   subgrid placement. */
+.rows {
+  display: contents;
+}
+
+/* ---------- column header row (32px, §6.2) ---------- */
+.headerRow {
+  display: grid;
+  grid-template-columns: subgrid;
+  grid-column: 1 / -1;
+  height: 32px;
+  align-items: center;
+}
+
+.headerCell {
+  display: flex;
+  align-items: center;
+  height: 24px; /* CAPTURED cell height inside the 32px row */
+  min-width: 0;
+}
+.headerCellEnd {
+  justify-content: flex-end;
+}
+
+/* 12px/450 secondary label (sortable buttons and plain spans share it). */
+.headerLabel {
+  font-size: var(--font-size-mini);
+  font-weight: var(--font-weight-normal);
+  color: var(--color-text-muted);
+  white-space: nowrap;
+}
+
+/* Sortable header button — hover chevron container (opacity 0 in DOM). */
+.sortBtn {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  min-width: 0;
+  border-radius: var(--control-border-radius);
+  transition-property: color;
+  transition-duration: var(--speed-highlightFadeOut);
+  transition-timing-function: var(--ease-out-quad);
+}
+.sortChevron {
+  display: inline-grid;
+  place-items: center;
+  width: 12px;
+  height: 12px;
+  color: var(--color-text-muted);
+  opacity: 0;
+  transition-property: opacity, transform;
+  transition-duration: var(--speed-highlightFadeOut);
+  transition-timing-function: var(--ease-out-quad);
+}
+.sortBtn[data-sorted="true"] .sortChevron {
+  opacity: 1;
+}
+/* Chevron glyph points down; ascending flips it up. */
+.sortBtn[data-dir="asc"] .sortChevron {
+  transform: rotate(180deg);
+}
+.sortBtn:focus-visible .sortChevron {
+  opacity: 1;
+}
+@media (any-hover: hover) and (any-pointer: fine) {
+  .sortBtn:hover .headerLabel {
+    color: var(--color-text-base);
+    transition-duration: var(--speed-highlightFadeIn);
+  }
+  .sortBtn:hover .sortChevron {
+    opacity: 1;
+    transition-duration: var(--speed-highlightFadeIn);
+  }
+}
+
+/* ---------- project row (48px <a>, §6.3) ---------- */
+.row {
+  display: grid;
+  grid-template-columns: subgrid;
+  grid-column: 1 / -1;
+  align-items: center;
+  height: 48px;
+  position: relative;
+  border-radius: var(--radius-row); /* 8px */
+  isolation: isolate;
+  will-change: transform;
+  contain: style;
+}
+
+/* Background painted on ::before with the 8px horizontal bleed inset
+   (same idiom as ui/list.module.css .row::before). */
+.row::before {
+  content: "";
+  position: absolute;
+  inset: 0 8px;
+  border-radius: inherit;
+  z-index: -1;
+  transition-property: box-shadow, background-color;
+  transition-duration: var(--speed-highlightFadeOut), var(--speed-highlightFadeIn);
+}
+.row[data-selected="true"]::before {
+  background: var(--row-applied-bg);
+}
+@media (any-hover: hover) and (any-pointer: fine) {
+  .row:not([data-selected="true"]):hover::before {
+    background: var(--color-hover-bg);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .row::before {
+    transition: none;
+  }
+}
+
+/* ---------- cells ---------- */
+.cellCheckbox {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 0;
+}
+
+/* Hover-revealed row checkbox (§6.1) — in the DOM at opacity 0, revealed on
+   row hover / focus, persistent while checked. */
+.checkbox {
+  position: relative;
+  width: 14px;
+  height: 14px;
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--control-border-radius);
+  background: transparent;
+  box-shadow: 0 0 0 1px var(--color-border-solid) inset;
+  color: #fff;
+  opacity: 0;
+  transition-property: opacity, background-color, box-shadow;
+  transition-duration: var(--speed-highlightFadeOut);
+  transition-timing-function: var(--ease-out-quad);
+}
+/* Inflated hit area (capture: 22px hitbox), no layout shift. */
+.checkbox::after {
+  content: "";
+  position: absolute;
+  inset: -5px;
+}
+.checkbox[data-checked="true"] {
+  opacity: 1;
+  background: var(--color-accent);
+  box-shadow: 0 0 0 1px var(--color-accent) inset;
+}
+.checkbox:focus-visible {
+  opacity: 1;
+}
+.checkGlyph {
+  width: 12px;
+  height: 12px;
+  fill: currentColor;
+  opacity: 0;
+}
+.checkbox[data-checked="true"] .checkGlyph {
+  opacity: 1;
+}
+@media (any-hover: hover) and (any-pointer: fine) {
+  .row:hover .checkbox {
+    opacity: 1;
+    transition-duration: var(--speed-highlightFadeIn);
+  }
+  .checkbox:hover {
+    box-shadow: 0 0 0 1px var(--color-border-hover) inset;
+    transition-duration: var(--speed-highlightFadeIn);
+  }
+}
+
+/* ----- title cell: icon tile + name + milestone chip ----- */
+.cellTitle {
+  display: flex;
+  align-items: center;
+  min-width: 0;
+}
+
+/* 28×28 r4 icon tile; bg = project color at .175 alpha (set inline via
+   --tile-bg color-mix); emoji renders at 13px inside a 16px box. */
+.iconTile {
+  width: 28px;
+  height: 28px;
+  flex-shrink: 0;
+  margin-right: 6px;
+  display: grid;
+  place-items: center;
+  border-radius: var(--control-border-radius);
+  background: var(--tile-bg);
+  font-size: 13px;
+  line-height: 1;
+}
+
+.titleStack {
+  display: flex;
+  align-items: center;
+  min-width: 0;
+  min-height: 27px;
+  flex: 1;
+}
+
+.name {
+  font-size: var(--font-size-small); /* 13px */
+  font-weight: var(--font-weight-medium); /* 500 */
+  color: var(--color-text-title);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+/* Capture: name capped at 70% when the milestone chip is present. */
+.nameCapped {
+  max-width: 70%;
+  flex-shrink: 0;
+}
+
+/* Milestone chip: h27, radius 48px, diamond + 12px "M3 · name" + muted date. */
+.milestoneChip {
+  display: inline-flex;
+  align-items: center;
+  height: 27px;
+  margin-left: 8px;
+  padding: 0 4px 0 6px; /* capture: pr 4 */
+  border-radius: 48px;
+  min-width: 0;
+  flex: 0 1 auto;
+  transition-property: background-color;
+  transition-duration: var(--speed-highlightFadeOut);
+  transition-timing-function: var(--ease-out-quad);
+}
+@media (any-hover: hover) and (any-pointer: fine) {
+  .milestoneChip:hover {
+    background: var(--color-control-hover);
+    transition-duration: var(--speed-highlightFadeIn);
+  }
+}
+.chipDiamond {
+  display: inline-grid;
+  place-items: center;
+  width: 16px;
+  height: 16px;
+  flex-shrink: 0;
+  margin-right: 6px;
+}
+.chipLabel {
+  font-size: var(--font-size-mini); /* 12px */
+  color: var(--color-text-muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  min-width: 0;
+}
+.chipDate {
+  margin-left: 8px;
+  font-size: var(--font-size-mini);
+  color: var(--color-text-faint);
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+/* ----- generic property cells ----- */
+.cellHealth,
+.cellPriority,
+.cellLead,
+.cellDate,
+.cellStatus {
+  display: flex;
+  align-items: center;
+  min-width: 0;
+}
+.cellIssues {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end; /* capture: flex-end */
+  min-width: 0;
+}
+
+/* data-detail-property-button geometry: min-height 28, padding 3/6. */
+.propertyBtn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 28px;
+  max-width: 100%;
+  min-width: 0;
+  padding: 3px 6px;
+  border-radius: var(--control-border-radius);
+  color: var(--color-text-muted);
+  transition-property: background-color, color, opacity;
+  transition-duration: var(--speed-highlightFadeOut);
+  transition-timing-function: var(--ease-out-quad);
+}
+.propertyBtn[data-menu-open="true"] {
+  background: var(--color-hover-bg);
+}
+@media (any-hover: hover) and (any-pointer: fine) {
+  .propertyBtn:hover {
+    background: var(--color-hover-bg);
+    transition-duration: var(--speed-highlightFadeIn);
+  }
+}
+
+/* Health trigger hover uses the captured faint tint (§6.3 cell 4). */
+@media (any-hover: hover) and (any-pointer: fine) {
+  .healthBtn:hover {
+    background: color-mix(in srgb, var(--color-text-faint) 12.5%, transparent);
+  }
+}
+.healthBtn[data-menu-open="true"] {
+  background: color-mix(in srgb, var(--color-text-faint) 12.5%, transparent);
+}
+
+/* 12px property text (health label, status %, issue count, date). */
+.propText {
+  font-size: var(--font-size-mini);
+  font-weight: var(--font-weight-normal);
+  color: var(--color-text-muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.tabular {
+  font-variant-numeric: tabular-nums;
+}
+
+/* Empty-lead dashed person (16px, hover-revealed). */
+.leadEmpty {
+  display: inline-grid;
+  place-items: center;
+  width: 16px;
+  height: 16px;
+  color: var(--color-text-faint);
+}
+
+/* Target date: overdue = red text AND calendar tint (lch(58% 73 29) dark). */
+.dateBtn {
+  color: var(--color-text-muted);
+}
+.dateBtn .propText {
+  color: inherit;
+}
+.dateOverdue {
+  color: var(--color-red);
+  --icon-replacement-color: var(--color-red);
+}
+.dateIcon {
+  display: inline-grid;
+  place-items: center;
+  flex-shrink: 0;
+}
+
+/* Hover-revealed empty-state affordances (§6.1: present at opacity 0). */
+.hoverReveal {
+  opacity: 0;
+  transition-property: opacity;
+  transition-duration: var(--speed-highlightFadeOut);
+  transition-timing-function: var(--ease-out-quad);
+}
+.hoverReveal:focus-visible {
+  opacity: 1;
+}
+@media (any-hover: hover) and (any-pointer: fine) {
+  .row:hover .hoverReveal {
+    opacity: 1;
+    transition-duration: var(--speed-highlightFadeIn);
+  }
+}
+
+/* 32×16 sparkline appended after the status pill. */
+.sparkline {
+  display: inline-flex;
+  align-items: center;
+  flex-shrink: 0;
+  margin-left: 6px;
+}
+
+/* ---------- page chrome shared by both projects views ---------- */
+
+/* Breadcrumb "Team › Projects" (team-scoped view; same spec as §10.6). */
+.crumbs {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+  font-size: var(--font-size-small);
+  font-weight: var(--font-weight-medium);
+  white-space: nowrap;
+}
+.crumbTeam {
+  color: var(--color-text-muted);
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.crumbSep {
+  color: var(--color-text-faint);
+  font-weight: var(--font-weight-normal);
+}
+.crumbCurrent {
+  color: var(--color-text-base);
+}
+.crumbSkeleton {
+  width: 72px;
+  height: 13px;
+  border-radius: var(--control-border-radius);
+  background: linear-gradient(
+    90deg,
+    var(--color-bg-shade) 25%,
+    var(--color-hover-bg) 50%,
+    var(--color-bg-shade) 75%
+  );
+  background-size: 200% 100%;
+  animation: crumbShimmer 1.4s ease infinite;
+}
+@keyframes crumbShimmer {
+  from {
+    background-position: 150% 0;
+  }
+  to {
+    background-position: -50% 0;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .crumbSkeleton {
+    animation: none;
+  }
+}
+
+/* ---------- keyboard cursor (§6.7 highlight vs selection) ---------- */
+.row[data-keyboard-active="true"]::before {
+  box-shadow: 0 0 0 1px var(--row-keyboard-border) inset;
+}
+
+/* ---------- grouped rows (§11.1 grouping) ---------- */
+.groupRow {
+  grid-column: 1 / -1;
+  min-width: 0;
+}
+
+/* ---------- list body + docked insights rail ---------- */
+.body {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  align-items: stretch;
+}
+
+/* Click-cancelling wrapper for in-row pickers: display:contents keeps the
+   row layout identical while still receiving the bubbled click. */
+.pickerSlot {
+  display: contents;
+}

@@ -1,0 +1,79 @@
+/* Row-selector checkbox — 14px square, r4, 1px border (CAPTURED). */
+
+.root {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+
+.control {
+  position: relative;
+  width: 14px;
+  height: 14px;
+  flex-shrink: 0;
+}
+
+.input {
+  appearance: none;
+  display: block;
+  width: 14px;
+  height: 14px;
+  margin: 0;
+  padding: 0;
+  border: 1px solid var(--color-border-solid);
+  border-radius: var(--control-border-radius);
+  background: transparent;
+  /* hover idiom (§2.4): snap in 0s, fade out .15s */
+  transition-property: border-color, background-color;
+  transition-duration: var(--speed-highlightFadeOut);
+  transition-timing-function: var(--ease-out-quad);
+}
+
+@media (any-hover: hover) and (any-pointer: fine) {
+  .input:hover {
+    border-color: var(--color-border-hover);
+    transition-duration: var(--speed-highlightFadeIn);
+  }
+  .input:checked:hover {
+    background: var(--color-accent-hover);
+    border-color: var(--color-accent-hover);
+    transition-duration: var(--speed-highlightFadeIn);
+  }
+}
+
+.input:checked {
+  background: var(--color-accent);
+  border-color: var(--color-accent);
+}
+
+/* white check path, revealed by :checked */
+.check {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  color: #fff;
+  opacity: 0;
+  transition: opacity var(--speed-highlightFadeOut) var(--ease-out-quad);
+}
+
+.input:checked + .check {
+  opacity: 1;
+  transition-duration: var(--speed-highlightFadeIn);
+}
+
+.label {
+  font-size: var(--font-size-small);
+  font-weight: var(--font-weight-normal);
+  color: var(--color-text-base);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .input,
+  .check {
+    transition-duration: 0s;
+  }
+}

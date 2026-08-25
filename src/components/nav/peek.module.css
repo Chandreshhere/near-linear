@@ -1,0 +1,248 @@
+/*
+ * Peek panel surface (Peek.tsx) — MASTER_PROMPT.md §12 (`Space` peek) and
+ * §6.10 (structural panels float above; the list behind keeps its route,
+ * highlight and scroll offset).
+ *
+ * The panel is an OVERLAY docked to the right window edge inside the shell's
+ * 8px gutter, so it clears the agent toolbar strip at the bottom
+ * (--agent-toolbar-height is 0 below 1024px — §2.5). Geometry mirrors the
+ * menu/dialog vocabulary: elevated surface, 1px hairline, radius-panel,
+ * shadow-medium.
+ *
+ * Motion is the captured enter/exit pair (§6.6): fade + an 8px slide *from*
+ * the anchored edge over 120ms ease-out-quad, exit fade 100ms. EXIT_MS in
+ * Peek.tsx must stay in sync with the exit duration below.
+ */
+
+/* ---------- surface ---------- */
+
+.panel {
+  position: fixed;
+  top: 8px;
+  right: 8px;
+  bottom: calc(8px + var(--agent-toolbar-height));
+  width: 480px;
+  max-width: calc(100vw - 16px);
+  display: flex;
+  flex-direction: column;
+  background: var(--color-bg-elevated);
+  border: 1px solid var(--color-border-solid);
+  border-radius: var(--radius-panel);
+  box-shadow: var(--shadow-medium);
+  z-index: var(--z-overlay);
+  overflow: hidden;
+  outline: none;
+  cursor: var(--pointer); /* cursor policy §2.5 — default arrow */
+}
+
+.panel[data-state="open"] {
+  animation: peekEnter 120ms var(--ease-out-quad);
+}
+.panel[data-state="closed"] {
+  animation: peekExit 100ms var(--ease-out-quad) forwards;
+}
+
+/* ---------- header (44px: identifier · spacer · Open · ✕) ---------- */
+
+.header {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  flex: none;
+  height: 44px;
+  padding: 0 12px;
+  border-bottom: 1px solid var(--color-border-thin);
+}
+
+.identifier {
+  font-size: var(--font-size-small); /* 13 */
+  font-weight: var(--font-weight-medium);
+  color: var(--color-text-muted);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+  user-select: none;
+}
+
+.spacer {
+  flex: 1 1 auto;
+  min-width: 8px;
+}
+
+/* ---------- body scroller ---------- */
+
+.body {
+  flex: 1 1 auto;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 16px;
+  overflow-y: auto;
+  overflow-x: hidden;
+  overscroll-behavior: contain;
+}
+
+.title {
+  margin: 0;
+  font-size: var(--font-size-large); /* 18 */
+  font-weight: var(--font-weight-semibold); /* 600 */
+  line-height: 24px;
+  color: var(--color-text-title);
+  overflow-wrap: anywhere;
+}
+
+.description {
+  margin: 0;
+  font-size: var(--font-size-small);
+  line-height: 20px;
+  color: var(--color-text-base);
+  overflow-wrap: anywhere;
+}
+
+.descriptionEmpty {
+  margin: 0;
+  font-size: var(--font-size-small);
+  line-height: 20px;
+  color: var(--color-text-faint);
+}
+
+/* ---------- property grid (label column · value column) ---------- */
+
+.properties {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  align-items: center;
+  column-gap: 12px;
+  row-gap: 8px;
+  margin: 0;
+  padding-top: 12px;
+  border-top: 1px solid var(--color-border-thin);
+  /* measured property-row size — sits between --font-size-mini and -small */
+  font-size: 12.5px;
+  line-height: 18px;
+}
+
+.propLabel {
+  margin: 0;
+  color: var(--color-text-muted);
+  white-space: nowrap;
+  user-select: none;
+}
+
+.propValue {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+  margin: 0;
+  color: var(--color-text-base);
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.muted {
+  color: var(--color-text-muted);
+}
+
+/* 16px icon slots — the dashed-person placeholder reads fainter than a real
+   value glyph, matching the empty-assignee idiom (§10.4). */
+.placeholderGlyph,
+.propGlyph {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: none;
+  width: 16px;
+  height: 16px;
+}
+.placeholderGlyph {
+  color: var(--icon-faint-color);
+}
+.propGlyph {
+  color: var(--color-text-muted);
+}
+
+/* ---------- label chips ---------- */
+
+.labelChips {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px 6px;
+  min-width: 0;
+}
+
+.labelChip {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  height: 20px;
+  padding: 0 8px;
+  border: 1px solid var(--color-border-thin);
+  border-radius: var(--radius-rounded);
+  background: var(--color-bg-shade);
+  color: var(--color-text-base);
+  white-space: nowrap;
+  /* hover idiom (§2.4): instant in, 150ms fade out */
+  transition-property: background-color, border-color;
+  transition-duration: var(--speed-highlightFadeOut);
+  transition-timing-function: var(--ease-out-quad);
+}
+
+@media (any-hover: hover) and (any-pointer: fine) {
+  .labelChip:hover {
+    background: var(--color-hover-bg);
+    border-color: var(--color-border-hover);
+    transition-duration: var(--speed-highlightFadeIn);
+  }
+}
+
+.labelDot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  flex: none;
+}
+
+/* ---------- footer line (activity / comment counts) ---------- */
+
+.activity {
+  margin: 0;
+  padding-top: 12px;
+  border-top: 1px solid var(--color-border-thin);
+  font-size: var(--font-size-mini); /* 12 */
+  line-height: 16px;
+  color: var(--color-text-muted);
+}
+
+/* ---------- motion ---------- */
+
+@keyframes peekEnter {
+  from {
+    opacity: 0;
+    transform: translateX(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes peekExit {
+  from {
+    opacity: 1;
+  }
+  to {
+    opacity: 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .panel[data-state="open"],
+  .panel[data-state="closed"] {
+    animation: none;
+  }
+  .labelChip {
+    transition-duration: 0s;
+  }
+}

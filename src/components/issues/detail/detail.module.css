@@ -1,0 +1,1094 @@
+/*
+ * Issue detail — MASTER_PROMPT.md §10.3 + docs/analysis/
+ * capture-trendzo-37-research-work.md (CAPTURED values throughout).
+ * Grid, rail anatomy, editor tokens, activity and composer geometry all
+ * come from the capture; colors route through tokens.css only.
+ */
+
+/* ================================================================
+ * View container (col grid host) — container queries drive the rail
+ * clamp() and column gap (cqw units, CAPTURED formulas).
+ * ================================================================ */
+.viewContainer {
+  position: relative;
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  container-type: inline-size;
+  container-name: issue-view-container;
+
+  /* ---- editor tokens (CAPTURED palette, mapped onto semantic tokens) ---- */
+  --editor-font-size: 0.9375rem; /* 15px */
+  --editor-line-height: 1.6;
+  --editor-letter-spacing: -0.00666667em;
+  --editor-block-spacing: 1rem;
+  --editor-list-inset: 1.5rem;
+  --editor-todolist-checkbox-width: 14px;
+  --editor-safe-area: 16px;
+  --editor-text-color: var(--color-text-base);
+  --editor-label-muted: var(--color-text-muted);
+  --editor-label-faint: var(--color-text-faint); /* placeholders are faint */
+  --editor-control-primary: var(--color-accent);
+  --editor-todo-checked-opacity: 0.65;
+  --detail-property-hover: var(--color-control-hover);
+}
+
+/* ---- floating copy-action strip (absolute under header, right) ---- */
+.actionStrip {
+  position: absolute;
+  top: 5px;
+  right: 12px;
+  z-index: 5;
+  display: flex;
+  align-items: center;
+  gap: 2px;
+}
+
+/* ================================================================
+ * Content grid (CAPTURED):
+ * 1fr | 80ch content | clamp(280px…400px) rail | 1fr
+ * ================================================================ */
+.grid {
+  flex: 1;
+  min-height: 0;
+  display: grid;
+  /* CAPTURED: 80ch resolves against the 16px browser default (806.25px),
+     not the card's 15px — pinned explicitly so `ch` metrics can't drift. */
+  grid-template-columns:
+    1fr
+    minmax(0, 806.25px)
+    minmax(0, clamp(280px, 26.087cqw + 66.087px, 400px))
+    1fr;
+  column-gap: clamp(16px, 8.696cqw - 55.304px, 56px);
+  overflow-y: auto;
+  align-content: start;
+  align-items: start;
+  scrollbar-gutter: stable;
+  outline: none;
+}
+
+.contentCol {
+  grid-column: 2;
+  min-width: 0;
+  padding-left: 14px; /* CAPTURED left inset */
+  padding-bottom: 60px;
+}
+
+.railCol {
+  grid-column: 3;
+  min-width: 0;
+  align-self: stretch; /* full grid height so the inner wrapper can stick */
+}
+
+.railSticky {
+  position: sticky;
+  top: 0;
+  align-self: start;
+  padding-top: 51px; /* CAPTURED — clears the floating action strip */
+  padding-bottom: 54px;
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+/* ================================================================
+ * Breadcrumbs (header left slot) — 13px; links muted → base on hover
+ * ================================================================ */
+.breadcrumbs {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  min-width: 0;
+  font-size: var(--font-size-small);
+  font-weight: var(--font-weight-normal);
+}
+
+.crumb,
+.crumbCurrent {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 2px 6px;
+  border-radius: 6px;
+  color: var(--color-text-muted);
+  white-space: nowrap;
+  transition-property: background-color, color;
+  transition-duration: var(--speed-highlightFadeOut);
+  transition-timing-function: var(--ease-out-quad);
+}
+
+@media (any-hover: hover) and (any-pointer: fine) {
+  .crumb:hover,
+  .crumbCurrent:hover {
+    transition-duration: var(--speed-highlightFadeIn);
+    background: var(--color-control-hover);
+    color: var(--color-text-base);
+  }
+}
+
+.crumbCurrent {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  display: inline-block; /* enable ellipsis on the combined ID + title */
+}
+
+.crumbTeamIcon {
+  display: inline-flex;
+  opacity: 0.9;
+  flex-shrink: 0;
+}
+
+.crumbSep {
+  color: var(--color-text-faint);
+  flex-shrink: 0;
+  padding: 0 2px;
+  user-select: none;
+}
+
+/* ================================================================
+ * Title editor — single-line ProseMirror (CAPTURED type ramp)
+ * ================================================================ */
+.titleBlock {
+  margin-top: 18px;
+  padding: 6px 0;
+  margin-bottom: 8px;
+}
+
+.titleEditor :global(.ProseMirror) {
+  font-size: 1.5rem; /* 24px */
+  font-weight: var(--font-weight-semibold);
+  line-height: calc(1 + 1 / 3);
+  letter-spacing: -0.00625rem;
+  text-wrap: pretty;
+  color: var(--editor-text-color);
+  cursor: text;
+  outline: none;
+  white-space: pre-wrap;
+  word-break: break-word;
+  user-select: text;
+}
+
+/* ================================================================
+ * Description editor — multiline ProseMirror (CAPTURED tokens)
+ * ================================================================ */
+.descriptionEditor :global(.ProseMirror) {
+  font-size: var(--editor-font-size);
+  font-weight: var(--font-weight-normal); /* 450 */
+  line-height: var(--editor-line-height);
+  letter-spacing: var(--editor-letter-spacing);
+  color: var(--editor-text-color);
+  cursor: text;
+  outline: none;
+  min-height: 24px;
+  white-space: pre-wrap;
+  word-break: break-word;
+  user-select: text;
+}
+
+.descriptionEditor :global(.ProseMirror > * + *) {
+  margin-top: calc(var(--editor-block-spacing) * 0.375);
+}
+.descriptionEditor :global(.ProseMirror > p + p) {
+  margin-top: var(--editor-block-spacing);
+}
+
+/* plain lists */
+.descriptionEditor :global(.ProseMirror ul:not([data-type="taskList"])) {
+  list-style: disc;
+  padding-left: var(--editor-list-inset);
+}
+.descriptionEditor :global(.ProseMirror ol) {
+  list-style: decimal;
+  padding-left: var(--editor-list-inset);
+}
+.descriptionEditor :global(.ProseMirror li + li) {
+  margin-top: calc(var(--editor-block-spacing) * 0.375);
+}
+
+/* ---- todo list (CAPTURED anatomy: 14px checkbox, checked 0.65) ----
+ * NOTE: Tiptap v3's TaskItem node view renders the live <li> with only
+ * `data-checked` (no data-type), so selectors key off the taskList parent. */
+.descriptionEditor :global(.ProseMirror ul[data-type="taskList"]) {
+  list-style: none;
+  padding-left: 0;
+}
+
+.descriptionEditor :global(.ProseMirror ul[data-type="taskList"] > li) {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+}
+
+.descriptionEditor :global(.ProseMirror ul[data-type="taskList"] > li > label) {
+  flex-shrink: 0;
+  position: relative;
+  width: var(--editor-todolist-checkbox-width);
+  height: var(--editor-todolist-checkbox-width);
+  /* center against the 24px first text line (15px × 1.6) */
+  margin-top: 5px;
+}
+
+.descriptionEditor
+  :global(.ProseMirror ul[data-type="taskList"] input[type="checkbox"]) {
+  appearance: none;
+  -webkit-appearance: none;
+  display: block;
+  width: var(--editor-todolist-checkbox-width);
+  height: var(--editor-todolist-checkbox-width);
+  margin: 0;
+  border-radius: 4px;
+  box-shadow: inset 0 0 0 1.5px var(--color-text-faint);
+  background-color: transparent;
+  cursor: var(--pointer);
+  transition-property: background-color, box-shadow;
+  transition-duration: var(--speed-highlightFadeOut);
+  transition-timing-function: var(--ease-out-quad);
+}
+
+.descriptionEditor
+  :global(.ProseMirror ul[data-type="taskList"] input[type="checkbox"]:hover) {
+  box-shadow: inset 0 0 0 1.5px var(--color-text-muted);
+  transition-duration: var(--speed-highlightFadeIn);
+}
+
+.descriptionEditor
+  :global(.ProseMirror ul[data-type="taskList"] input[type="checkbox"]:checked) {
+  background-color: var(--editor-control-primary);
+  box-shadow: inset 0 0 0 1.5px var(--editor-control-primary);
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cpath d='M3.8 8.6 6.6 11.4 12.2 4.8' fill='none' stroke='white' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+  background-size: 12px;
+  background-position: center;
+  background-repeat: no-repeat;
+}
+
+.descriptionEditor :global(.ProseMirror ul[data-type="taskList"] > li > div) {
+  flex: 1;
+  min-width: 0;
+}
+
+.descriptionEditor
+  :global(.ProseMirror ul[data-type="taskList"] > li[data-checked="true"] > div) {
+  opacity: var(--editor-todo-checked-opacity);
+}
+
+/* ---- placeholders ----
+   The whole-doc-empty case keeps the captured "Add description…"; any other
+   empty line the cursor sits on advertises the slash menu (finding 13). */
+.titleEditor :global(.ProseMirror p.is-editor-empty:first-child::before),
+.descriptionEditor :global(.ProseMirror p.is-editor-empty:first-child::before),
+.descriptionEditor :global(.ProseMirror p.is-empty::before) {
+  content: attr(data-placeholder);
+  color: var(--editor-label-faint);
+  pointer-events: none;
+  float: left;
+  height: 0;
+}
+
+/* ---- slash-command menu (finding 13) ---- */
+.descriptionWrap {
+  position: relative;
+}
+
+.slashMenu {
+  position: absolute;
+  z-index: var(--z-overlay);
+  min-width: 200px;
+  padding: 4px;
+  background: var(--color-bg-elevated);
+  border: 1px solid var(--color-border-solid);
+  border-radius: 8px;
+  box-shadow: var(--shadow-medium);
+  animation: menuEnterDetail 120ms var(--ease-out-quad);
+}
+
+.slashItem {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  height: 28px;
+  padding: 0 8px;
+  border-radius: var(--control-border-radius);
+  font-size: var(--font-size-small);
+  color: var(--color-text-base);
+  text-align: left;
+  transition: background-color var(--speed-highlightFadeOut) var(--ease-out-quad);
+}
+.slashItem[data-active="true"] {
+  background: var(--color-hover-bg);
+  transition-duration: var(--speed-highlightFadeIn);
+}
+
+.slashLabel {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.slashHint {
+  flex: none;
+  font-size: var(--font-size-mini);
+  color: var(--color-text-faint);
+}
+
+/* ================================================================
+ * Under-description rows
+ * ================================================================ */
+.editorActionRow {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  margin-top: 12px;
+}
+
+.subIssuesBar {
+  display: flex;
+  align-items: center;
+  margin-top: 16px;
+}
+
+.addSubIssues {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 24px;
+  padding: 0 8px 0 6px;
+  margin-left: -6px;
+  border-radius: 6px;
+  font-size: var(--font-size-mini);
+  font-weight: var(--font-weight-medium);
+  color: var(--color-text-muted);
+  transition-property: background-color, color;
+  transition-duration: var(--speed-highlightFadeOut);
+  transition-timing-function: var(--ease-out-quad);
+}
+@media (any-hover: hover) and (any-pointer: fine) {
+  .addSubIssues:hover {
+    transition-duration: var(--speed-highlightFadeIn);
+    background: var(--color-control-hover);
+    color: var(--color-text-base);
+    --icon-replacement-color: var(--color-text-base);
+  }
+}
+
+.divider {
+  height: 0;
+  border-top: var(--thin-pixel) solid var(--color-border-thin);
+  margin-top: 16px;
+}
+
+/* ================================================================
+ * Activity (CAPTURED: header 15px/600 · pile 18px · entries 12.5px)
+ * ================================================================ */
+.activityHeader {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 20px;
+  padding-right: 8px;
+}
+
+.activityTitle {
+  font-size: var(--font-size-regular); /* 15px */
+  font-weight: var(--font-weight-semibold);
+  line-height: 1.4375rem;
+  color: var(--color-text-base);
+}
+
+.activitySpacer {
+  flex: 1;
+}
+
+.subscriberPile {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px;
+  border-radius: var(--radius-rounded);
+}
+
+.pileAvatar {
+  display: inline-flex;
+  border-radius: 50%;
+  box-shadow: 0 0 0 1.5px var(--bg-base-color);
+}
+.pileAvatar + .pileAvatar {
+  margin-left: -6px;
+}
+
+.activityFeed {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  margin-top: 16px;
+  padding-right: 10px;
+}
+
+.activityEntry {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+}
+
+/* 14px round avatar, 8px initials (capture; ui/Avatar has no 14 size) */
+.miniAvatar {
+  flex-shrink: 0;
+  width: 14px;
+  height: 14px;
+  margin-top: 2px;
+  border-radius: 50%;
+  display: inline-grid;
+  place-items: center;
+  font-size: 8px;
+  font-weight: var(--font-weight-medium);
+  line-height: 1;
+  color: #fff;
+  user-select: none;
+}
+
+.activityText {
+  font-size: 12.5px;
+  font-weight: var(--font-weight-normal);
+  line-height: 1.4;
+  color: var(--color-text-muted);
+  word-break: break-word;
+  min-width: 0;
+}
+
+.activityActor {
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-text-base);
+}
+
+.activityTime {
+  color: var(--color-text-muted);
+  white-space: nowrap;
+}
+@media (any-hover: hover) and (any-pointer: fine) {
+  .activityTime:hover {
+    color: var(--color-text-base);
+  }
+}
+
+/* ================================================================
+ * Comment composer (CAPTURED: elevated card, radius 8, shadow-low)
+ * ================================================================ */
+.composer {
+  margin-top: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-width: min(300px, 100%);
+  padding: 12px;
+  border-radius: 8px;
+  background: var(--color-bg-elevated);
+  border: var(--thin-pixel) solid var(--color-border-solid);
+  box-shadow: var(--shadow-low);
+}
+
+.composerInput {
+  width: 100%;
+  resize: none;
+  outline: none;
+  font-size: var(--editor-font-size);
+  font-weight: var(--font-weight-normal);
+  line-height: var(--editor-line-height);
+  letter-spacing: var(--editor-letter-spacing);
+  color: var(--editor-text-color);
+  min-height: 24px;
+  max-height: 240px;
+  field-sizing: content;
+  cursor: text;
+  user-select: text;
+}
+.composerInput::placeholder {
+  color: var(--editor-label-faint);
+  opacity: 1;
+}
+
+.composerFooter {
+  display: flex;
+  justify-content: flex-end;
+}
+
+.composerSubmit {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: var(--color-accent);
+  --icon-replacement-color: lch(100% 0 272);
+  transition-property: background-color, opacity;
+  transition-duration: var(--speed-highlightFadeOut);
+  transition-timing-function: var(--ease-out-quad);
+}
+@media (any-hover: hover) and (any-pointer: fine) {
+  .composerSubmit:not(:disabled):hover {
+    transition-duration: var(--speed-highlightFadeIn);
+    background: var(--color-accent-hover);
+  }
+}
+.composerSubmit:disabled {
+  background: var(--color-control-hover);
+  --icon-replacement-color: var(--icon-faint-color);
+}
+
+/* ================================================================
+ * Property rail (CAPTURED: section header 13px/500 muted h20,
+ * rows data-detail-button min-h 28 / pad 3 6 / radius 6)
+ * ================================================================ */
+.rail {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  min-width: 0;
+}
+
+.railSection {
+  display: flex;
+  flex-direction: column;
+}
+
+.sectionHeader {
+  height: 20px;
+  display: flex;
+  align-items: center;
+  padding: 0 8px;
+  font-size: var(--font-size-small);
+  font-weight: var(--font-weight-medium);
+  color: var(--color-text-muted);
+}
+
+.sectionContent {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 4px;
+  padding-top: 8px;
+}
+
+.detailButton {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 28px;
+  max-width: 100%;
+  padding: 3px 6px;
+  border-radius: 6px;
+  font-size: var(--font-size-small);
+  font-weight: var(--font-weight-medium);
+  color: var(--color-text-base);
+  transition-property: background-color, color;
+  transition-duration: var(--speed-highlightFadeOut);
+  transition-timing-function: var(--ease-out-quad);
+}
+@media (any-hover: hover) and (any-pointer: fine) {
+  .detailButton:hover {
+    transition-duration: var(--speed-highlightFadeIn);
+    background: var(--detail-property-hover);
+  }
+}
+.detailButton:active,
+.detailButton[data-menu-open="true"] {
+  transition-duration: var(--speed-highlightFadeIn);
+  background: var(--color-control-selected);
+}
+
+.detailLabel {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.detailMuted {
+  color: var(--color-text-muted);
+}
+
+.dashedPerson {
+  color: var(--color-text-muted);
+  flex-shrink: 0;
+}
+
+.projectEmoji {
+  display: inline-flex;
+  width: 16px;
+  height: 16px;
+  align-items: center;
+  justify-content: center;
+  font-size: 13px;
+  font-family: var(--font-emoji);
+  flex-shrink: 0;
+}
+
+/* ---- label chips: 8px dot + name, pill ring ---- */
+.labelChips {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  padding: 0 6px;
+}
+
+.labelChip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 24px;
+  padding: 0 10px;
+  border-radius: var(--radius-rounded);
+  box-shadow: inset 0 0 0 1px var(--color-border-solid);
+  font-size: var(--font-size-mini);
+  font-weight: var(--font-weight-normal);
+  color: var(--color-text-base);
+  white-space: nowrap;
+}
+
+.labelDot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.addLabelChip {
+  color: var(--color-text-muted);
+  box-shadow: inset 0 0 0 1px transparent;
+  transition-property: background-color, color, box-shadow;
+  transition-duration: var(--speed-highlightFadeOut);
+  transition-timing-function: var(--ease-out-quad);
+}
+@media (any-hover: hover) and (any-pointer: fine) {
+  .addLabelChip:hover,
+  .addLabelChip[data-menu-open="true"] {
+    transition-duration: var(--speed-highlightFadeIn);
+    background: var(--color-control-hover);
+    color: var(--color-text-base);
+    --icon-replacement-color: var(--color-text-base);
+  }
+}
+
+/* ================================================================
+ * Loading skeleton + not-found
+ * ================================================================ */
+.skeleton {
+  display: block;
+  background: var(--color-bg-shade);
+  border-radius: 6px;
+  animation: detailPulse 1.6s var(--ease-in-out-quad) infinite;
+}
+
+.skeletonCrumb {
+  width: 220px;
+  height: 14px;
+}
+
+.skeletonTitle {
+  width: 40%;
+  height: 26px;
+  margin-top: 18px;
+}
+
+.skeletonLine {
+  height: 13px;
+  margin-top: 14px;
+}
+
+.skeletonRow {
+  width: 120px;
+  height: 22px;
+}
+
+@keyframes detailPulse {
+  0%,
+  100% {
+    opacity: 0.55;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .skeleton {
+    animation: none;
+  }
+}
+
+.notFound {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding-bottom: 10vh;
+}
+
+.notFoundTitle {
+  font-size: var(--font-size-regular);
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-text-base);
+}
+
+.notFoundBody {
+  font-size: var(--font-size-small);
+  color: var(--color-text-muted);
+}
+
+/* ================================================================
+ * Reactions (§10.3 — the "Add reaction" control made real)
+ * ================================================================ */
+
+.reactionChip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  height: 24px;
+  padding: 0 8px;
+  border-radius: var(--radius-rounded);
+  background: var(--color-control-hover);
+  font-size: var(--font-size-mini);
+  font-weight: var(--font-weight-medium);
+  color: var(--color-text-muted);
+  transition:
+    background-color var(--speed-highlightFadeOut) var(--ease-out-quad),
+    box-shadow var(--speed-highlightFadeOut) var(--ease-out-quad);
+}
+.reactionChip[data-active="true"] {
+  background: var(--selection-bg);
+  color: var(--color-text-base);
+  box-shadow: inset 0 0 0 1px var(--color-accent);
+}
+@media (any-hover: hover) and (any-pointer: fine) {
+  .reactionChip:hover {
+    background: var(--color-control-selected);
+    transition-duration: var(--speed-highlightFadeIn);
+  }
+}
+
+.reactionEmoji {
+  font-family: var(--font-emoji);
+  font-size: 13px;
+  line-height: 1;
+}
+
+.reactionCount {
+  font-variant-numeric: tabular-nums;
+}
+
+/* Anchored 12-emoji picker */
+.emojiPopover {
+  background: var(--color-bg-elevated);
+  border: 1px solid var(--color-border-solid);
+  border-radius: 8px;
+  box-shadow: var(--shadow-medium);
+  padding: 6px;
+  z-index: var(--z-overlay);
+  outline: none;
+}
+.emojiPopover[data-state="open"] {
+  animation: menuEnterDetail 120ms var(--ease-out-quad);
+}
+@keyframes menuEnterDetail {
+  from {
+    opacity: 0;
+    transform: translateY(-2px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.emojiGrid {
+  display: grid;
+  grid-template-columns: repeat(6, 28px);
+  gap: 2px;
+}
+
+.emojiOption {
+  width: 28px;
+  height: 28px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--control-border-radius);
+  font-family: var(--font-emoji);
+  font-size: 16px;
+  line-height: 1;
+  transition: background-color var(--speed-highlightFadeOut) var(--ease-out-quad);
+}
+.emojiOption[data-active="true"] {
+  background: var(--color-selected-bg);
+}
+@media (any-hover: hover) and (any-pointer: fine) {
+  .emojiOption:hover {
+    background: var(--color-hover-bg);
+    transition-duration: var(--speed-highlightFadeIn);
+  }
+}
+
+/* ================================================================
+ * Sub-issues (§10.3 — progress read-out + child rows)
+ * ================================================================ */
+
+.subIssues {
+  margin-top: 16px;
+}
+
+.subIssuesHeader {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  height: 28px;
+}
+
+.subIssuesTitle {
+  font-size: var(--font-size-small);
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-text-base);
+}
+
+.subIssuesProgress {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: var(--font-size-mini);
+  color: var(--color-text-muted);
+  white-space: nowrap;
+}
+
+.subIssuesTrack {
+  display: inline-block;
+  width: 56px;
+  height: 4px;
+  border-radius: var(--radius-rounded);
+  background: var(--color-bg-shade);
+  overflow: hidden;
+}
+
+.subIssuesFill {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: var(--color-accent);
+  transition: width var(--speed-regularTransition) var(--ease-out-quad);
+}
+
+.subIssueList {
+  display: flex;
+  flex-direction: column;
+  margin-top: 4px;
+}
+
+.subIssueRow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  height: 34px;
+  padding: 0 4px;
+  border-radius: var(--radius-row);
+  border-top: var(--thin-pixel) solid var(--color-border-thin);
+  transition: background-color var(--speed-highlightFadeOut) var(--ease-out-quad);
+}
+@media (any-hover: hover) and (any-pointer: fine) {
+  .subIssueRow:hover {
+    background: var(--color-hover-bg);
+    transition-duration: var(--speed-highlightFadeIn);
+  }
+}
+
+.subIssueStatus {
+  flex: none;
+  width: 22px;
+  height: 22px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--control-border-radius);
+  transition: background-color var(--speed-highlightFadeOut) var(--ease-out-quad);
+}
+.subIssueStatus[data-menu-open="true"] {
+  background: var(--color-control-selected);
+}
+@media (any-hover: hover) and (any-pointer: fine) {
+  .subIssueStatus:hover {
+    background: var(--color-control-hover);
+    transition-duration: var(--speed-highlightFadeIn);
+  }
+}
+
+.subIssueId {
+  flex: none;
+  font-size: var(--font-size-mini);
+  color: var(--color-text-muted);
+  font-variant-numeric: tabular-nums;
+}
+
+.subIssueTitle {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  font-size: var(--font-size-small);
+  font-weight: var(--font-weight-medium);
+  color: var(--color-text-base);
+  text-decoration: none;
+}
+
+.subIssueAssignee {
+  flex: none;
+  display: inline-flex;
+  width: 18px;
+  height: 18px;
+}
+
+/* Empty subscriber pile keeps the button hittable (§10.3 "Change subscribers") */
+.pileEmpty {
+  font-size: var(--font-size-mini);
+  color: var(--color-text-muted);
+  padding: 0 4px;
+}
+
+/* ================================================================
+ * Configure-coding-tools dialog (§10.3 ⌄ overflow)
+ * ================================================================ */
+
+.toolsDialog {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 20px;
+}
+
+.toolsTitle {
+  margin: 0;
+  font-size: var(--font-size-regular);
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-text-title);
+}
+
+.toolsBody {
+  margin: 0;
+  font-size: var(--font-size-small);
+  line-height: 1.5;
+  color: var(--color-text-muted);
+}
+
+.toolsList {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  margin-top: 4px;
+}
+
+.toolRow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  height: 32px;
+  padding: 0 8px;
+  border-radius: var(--radius-row);
+  font-size: var(--font-size-small);
+  color: var(--color-text-base);
+  text-align: left;
+  transition: background-color var(--speed-highlightFadeOut) var(--ease-out-quad);
+}
+.toolRow[data-selected="true"] {
+  background: var(--color-selected-bg);
+}
+@media (any-hover: hover) and (any-pointer: fine) {
+  .toolRow:hover {
+    background: var(--color-hover-bg);
+    transition-duration: var(--speed-highlightFadeIn);
+  }
+}
+
+.toolRadio {
+  flex: none;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  border: 1px solid var(--color-border-hover);
+}
+.toolRow[data-selected="true"] .toolRadio {
+  border-color: var(--color-accent);
+  border-width: 4px;
+}
+
+.toolName {
+  flex: none;
+  font-weight: var(--font-weight-medium);
+}
+
+.toolHint {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  text-align: right;
+  font-size: var(--font-size-mini);
+  font-family: var(--font-monospace);
+  color: var(--color-text-faint);
+}
+
+.toolsActions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .reactionChip,
+  .emojiOption,
+  .emojiPopover[data-state="open"],
+  .subIssuesFill,
+  .subIssueRow,
+  .subIssueStatus,
+  .toolRow {
+    animation: none;
+    transition: none;
+  }
+}
+
+/* ================================================================
+ * Narrow viewports: the captured 4-column grid (gutter · 80ch body ·
+ * 280–400px rail · gutter) needs ~1100px to hold its shape. Below that the
+ * rail's clamp floor still claimed 280px, leaving the description two or
+ * three words per line on a phone. Stack instead: body first, properties
+ * under it, each full width.
+ * ================================================================ */
+@media (max-width: 899px) {
+  .grid {
+    grid-template-columns: minmax(0, 1fr);
+    row-gap: 8px;
+    /* The 1fr gutters supplied the side inset in the 4-column form. */
+    padding-inline: 20px;
+  }
+  .contentCol {
+    grid-column: 1;
+    padding-left: 0;
+    padding-bottom: 24px;
+  }
+  .railCol {
+    grid-column: 1;
+    align-self: auto;
+  }
+  /* Sticking a stacked rail would park it over the body it belongs under. */
+  .railSticky {
+    position: static;
+    padding-top: 0;
+    padding-bottom: 40px;
+    gap: 16px;
+  }
+}

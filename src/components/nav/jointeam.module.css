@@ -1,0 +1,12 @@
+/* Small workspace tile inside the "Join a team" menu rows (§5 avatar idiom). */
+.tile {
+  width: 16px;
+  height: 16px;
+  border-radius: 5px;
+  display: grid;
+  place-items: center;
+  font-size: 8px;
+  font-weight: var(--font-weight-medium);
+  color: #fff;
+  flex: none;
+}

@@ -1,0 +1,1163 @@
+/*
+ * Project pages (overview / issues / activity) — MASTER_PROMPT.md §10.2 +
+ * docs/analysis/capture-driver-app-overview.md (CAPTURED values throughout).
+ * Colors route through tokens.css only; cursor stays default (--pointer).
+ */
+
+/* ================================================================
+ * Breadcrumbs (header row A — §6.1: 13px, parent muted → current base)
+ * ================================================================ */
+.crumbs {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  min-width: 0;
+  font-size: var(--font-size-small);
+  font-weight: var(--font-weight-normal);
+}
+
+.crumb,
+.crumbCurrent {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 2px 6px;
+  border-radius: 6px;
+  white-space: nowrap;
+  color: var(--color-text-muted);
+  transition-property: background-color, color;
+  transition-duration: var(--speed-highlightFadeOut);
+  transition-timing-function: var(--ease-out-quad);
+}
+
+.crumbCurrent {
+  color: var(--color-text-base);
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+@media (any-hover: hover) and (any-pointer: fine) {
+  .crumb:hover,
+  a.crumbCurrent:hover {
+    transition-duration: var(--speed-highlightFadeIn);
+    background: var(--color-control-hover);
+    color: var(--color-text-base);
+  }
+}
+
+.crumbSep {
+  color: var(--color-text-faint);
+  flex-shrink: 0;
+  padding: 0 2px;
+  user-select: none;
+}
+
+/* emoji chip: 16px glyph in a 24px-high box (CAPTURED data-type="emoji") */
+.crumbProjectIcon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  height: 24px;
+  min-width: 16px;
+  font-size: 16px;
+  font-family: var(--font-emoji);
+  flex-shrink: 0;
+  user-select: none;
+}
+
+.crumbSkeleton {
+  width: 180px;
+  height: 14px;
+}
+
+/* ================================================================
+ * Content row: left scroller + details rail (§1)
+ * ================================================================ */
+.contentRow {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  align-items: stretch;
+}
+
+.leftPane {
+  position: relative; /* minimap anchors here */
+  flex: 1;
+  min-width: 0;
+  display: flex;
+}
+
+.scroller {
+  flex: 1;
+  min-width: 0;
+  overflow-y: auto;
+  overflow-x: auto;
+  padding-left: 48px;
+  padding-right: 48px;
+  scrollbar-gutter: stable both-edges;
+  outline: none;
+}
+
+/* CAPTURED: min-width 600px on the scroll container itself */
+@media (min-width: 1024px) {
+  .scroller {
+    min-width: 600px;
+  }
+}
+
+/* 80ch overview form (CAPTURED: #form-new-project) */
+.form {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  max-width: 80ch;
+  margin-top: 64px; /* --overview-form-margin-top */
+  margin-bottom: 24px;
+  padding-bottom: 40px;
+}
+
+/* ================================================================
+ * Title row: 28×32 icon-picker + name editor (§6.2)
+ * ================================================================ */
+.titleRow {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+}
+
+.iconPickerBtn {
+  flex: none;
+  width: 28px;
+  height: 32px;
+  border-radius: 5.5px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 22px;
+  line-height: 1;
+  font-family: var(--font-emoji);
+  background: color-mix(in srgb, var(--project-color) 17.5%, transparent);
+  transition-property: background-color;
+  transition-duration: var(--speed-highlightFadeOut);
+  transition-timing-function: var(--ease-out-quad);
+  user-select: none;
+}
+
+@media (any-hover: hover) and (any-pointer: fine) {
+  .iconPickerBtn:hover,
+  .iconPickerBtn[data-menu-open="true"] {
+    transition-duration: var(--speed-highlightFadeIn);
+    background: color-mix(in srgb, var(--project-color) 26%, transparent);
+  }
+}
+
+.nameEditorWrap {
+  flex: 1;
+  min-width: 0;
+}
+
+/* name editor — 1.5rem/600 (CAPTURED ramp shared with issue title) */
+.nameEditor :global(.ProseMirror) {
+  font-size: 1.5rem;
+  font-weight: var(--font-weight-semibold);
+  line-height: calc(1 + 1 / 3);
+  letter-spacing: -0.00625rem;
+  text-wrap: pretty;
+  color: var(--color-text-base);
+  cursor: text;
+  outline: none;
+  white-space: pre-wrap;
+  word-break: break-word;
+  user-select: text;
+}
+
+/* summary editor — 0.9375rem/450, lh 1.4375rem (CAPTURED) */
+.summaryEditor {
+  margin-top: 4px;
+}
+.summaryEditor :global(.ProseMirror) {
+  font-size: var(--font-size-regular);
+  font-weight: var(--font-weight-normal);
+  line-height: 1.4375rem;
+  color: var(--color-text-base);
+  cursor: text;
+  outline: none;
+  white-space: pre-wrap;
+  word-break: break-word;
+  user-select: text;
+}
+
+.nameEditor :global(.ProseMirror p.is-editor-empty:first-child::before),
+.summaryEditor :global(.ProseMirror p.is-editor-empty:first-child::before) {
+  content: attr(data-placeholder);
+  color: var(--color-text-faint);
+  pointer-events: none;
+  float: left;
+  height: 0;
+}
+
+/* ---------- icon / color picker menu (local) ---------- */
+.iconMenu {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 4px;
+}
+
+.iconMenuGrid {
+  display: grid;
+  grid-template-columns: repeat(8, 28px);
+  gap: 2px;
+}
+
+.iconMenuEmoji {
+  width: 28px;
+  height: 28px;
+  border-radius: 6px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 17px;
+  font-family: var(--font-emoji);
+  transition-property: background-color;
+  transition-duration: var(--speed-highlightFadeOut);
+  transition-timing-function: var(--ease-out-quad);
+}
+
+.iconMenuSwatch {
+  width: 28px;
+  height: 28px;
+  border-radius: 6px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition-property: background-color;
+  transition-duration: var(--speed-highlightFadeOut);
+  transition-timing-function: var(--ease-out-quad);
+}
+
+@media (any-hover: hover) and (any-pointer: fine) {
+  .iconMenuEmoji:hover,
+  .iconMenuSwatch:hover {
+    transition-duration: var(--speed-highlightFadeIn);
+    background: var(--color-hover-bg);
+  }
+}
+
+.iconMenuSwatch[aria-pressed="true"] {
+  background: var(--color-selected-bg);
+}
+
+.swatchDot {
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: var(--swatch-color);
+}
+
+/* ================================================================
+ * Properties strip (§6.3): grid auto minmax(0,1fr), gap 12/16
+ * ================================================================ */
+.propsGrid {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: 12px 16px;
+  align-items: start;
+  margin-top: 24px;
+}
+
+@media (max-width: 640px) {
+  .propsGrid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+.groupLabel {
+  display: flex;
+  align-items: center;
+  min-height: 28px; /* aligns with the 28px pill row */
+  font-size: var(--font-size-small);
+  font-weight: var(--font-weight-medium);
+  color: var(--color-text-muted);
+  white-space: nowrap;
+}
+
+.propsSection {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 2px 4px;
+  min-width: 0;
+}
+
+/* property pill (CAPTURED: min-h 28, pad 3/6, 12px/450, hover token bg) */
+.propPill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 28px;
+  max-width: 100%;
+  padding: 3px 6px;
+  border-radius: 6px;
+  font-size: var(--font-size-mini);
+  font-weight: var(--font-weight-normal);
+  color: var(--color-text-base);
+  white-space: nowrap;
+  transition-property: background-color, color;
+  transition-duration: var(--speed-highlightFadeOut);
+  transition-timing-function: var(--ease-out-quad);
+}
+
+@media (any-hover: hover) and (any-pointer: fine) {
+  .propPill:hover,
+  .propPill[data-menu-open="true"] {
+    transition-duration: var(--speed-highlightFadeIn);
+    background: var(--details-property-hover-background, var(--color-control-hover));
+  }
+}
+
+.propPillLabel {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.dateArrow {
+  display: inline-flex;
+  color: var(--color-text-faint);
+  flex-shrink: 0;
+}
+
+/* hover-revealed trailing controls (§9: present at rest, shown on hover) */
+.hoverReveal {
+  opacity: 0;
+  transition: opacity var(--speed-quickTransition) var(--ease-out-quad);
+}
+.propsSection:hover .hoverReveal,
+.propsSection:focus-within .hoverReveal,
+.hoverReveal[data-menu-open="true"] {
+  opacity: 1;
+}
+
+.revealText {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 28px;
+  padding: 3px 6px;
+  border-radius: 6px;
+  font-size: var(--font-size-small);
+  font-weight: var(--font-weight-normal);
+  color: var(--color-text-muted);
+  transition-property: background-color, color, opacity;
+  transition-duration: var(--speed-highlightFadeOut);
+  transition-timing-function: var(--ease-out-quad);
+}
+
+@media (any-hover: hover) and (any-pointer: fine) {
+  .revealText:hover {
+    transition-duration: var(--speed-highlightFadeIn);
+    background: var(--color-control-hover);
+    color: var(--color-text-base);
+    --icon-replacement-color: var(--color-text-base);
+  }
+}
+
+/* ---------- date popover (local) ---------- */
+.datePopover {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 4px;
+}
+
+.dateLabel {
+  font-size: var(--font-size-mini);
+  font-weight: var(--font-weight-medium);
+  color: var(--color-text-muted);
+  padding: 0 2px;
+}
+
+.dateInput {
+  height: 28px;
+  padding: 0 8px;
+  border-radius: 6px;
+  border: 1px solid var(--color-border-solid);
+  background: var(--color-bg-shade);
+  color: var(--color-text-base);
+  font-size: var(--font-size-small);
+  font-family: inherit;
+  outline: none;
+  color-scheme: dark;
+}
+.dateInput:focus-visible {
+  border-color: var(--color-accent);
+}
+
+/* ================================================================
+ * Update strip (§6.4): bordered row, padding 16, radius 10
+ * ================================================================ */
+.updateStrip {
+  margin-top: 16px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 16px;
+  border: var(--thin-pixel) solid var(--color-border-solid);
+  border-radius: var(--radius-card);
+  text-align: left;
+  font-size: var(--font-size-small);
+  font-weight: var(--font-weight-normal);
+  color: var(--color-text-muted);
+  transition-property: background-color;
+  transition-duration: var(--speed-highlightFadeOut);
+  transition-timing-function: var(--ease-out-quad);
+}
+
+@media (any-hover: hover) and (any-pointer: fine) {
+  .updateStrip:hover {
+    transition-duration: var(--speed-highlightFadeIn);
+    background: var(--color-hover-bg);
+  }
+}
+
+.updateStripIcon {
+  display: inline-flex;
+  flex-shrink: 0;
+}
+
+/* ================================================================
+ * Sections (Description · Milestones)
+ * ================================================================ */
+.section {
+  margin-top: 32px;
+  display: flex;
+  flex-direction: column;
+  scroll-margin-top: 16px;
+}
+
+.sectionHeading {
+  font-size: var(--font-size-small);
+  font-weight: var(--font-weight-medium);
+  color: var(--color-text-muted);
+  margin-bottom: 8px;
+}
+
+/* ================================================================
+ * Milestones (§6.6)
+ * ================================================================ */
+.milestoneList {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.milestoneCard {
+  position: relative;
+  border-radius: var(--radius-row);
+  padding: 8px 10px;
+  scroll-margin-top: 16px;
+  transition-property: background-color;
+  transition-duration: var(--speed-highlightFadeOut);
+  transition-timing-function: var(--ease-out-quad);
+}
+
+@media (any-hover: hover) and (any-pointer: fine) {
+  .milestoneCard:hover {
+    transition-duration: var(--speed-highlightFadeIn);
+    background: var(--color-hover-bg);
+  }
+}
+
+.milestoneHeader {
+  display: flex;
+  align-items: center;
+  gap: 0;
+}
+
+/* 22px icon slot (CAPTURED) */
+.milestoneIconSlot {
+  width: 22px;
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  color: var(--icon-default-color);
+}
+
+.milestoneName {
+  flex: 1;
+  min-width: 0;
+  border: none;
+  background: transparent;
+  padding: 0;
+  margin: 0;
+  font-family: inherit;
+  font-size: var(--font-size-regular); /* 15px */
+  font-weight: var(--font-weight-semibold);
+  line-height: 1.4375rem;
+  color: var(--color-text-base);
+  outline: none;
+  cursor: text;
+  user-select: text;
+}
+.milestoneName::placeholder {
+  color: var(--color-text-faint);
+  opacity: 1;
+}
+
+.collapseBtn {
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  border-radius: 6px;
+  color: var(--icon-default-color);
+}
+@media (any-hover: hover) and (any-pointer: fine) {
+  .collapseBtn:hover {
+    background: var(--color-control-hover);
+    --icon-replacement-color: var(--color-text-base);
+  }
+}
+
+.collapseChevron {
+  transition: transform var(--speed-regularTransition) var(--ease-out-quad);
+}
+.collapseBtn[aria-expanded="false"] .collapseChevron {
+  transform: rotate(-90deg);
+}
+
+.milestoneMeta {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 24px;
+  padding-left: 22px;
+  font-size: var(--font-size-small);
+  color: var(--color-text-muted);
+}
+
+.metaChip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 1px 4px;
+  margin-left: -4px;
+  border-radius: 5px;
+  color: var(--color-text-muted);
+  font-size: var(--font-size-small);
+  transition-property: background-color, color;
+  transition-duration: var(--speed-highlightFadeOut);
+  transition-timing-function: var(--ease-out-quad);
+}
+@media (any-hover: hover) and (any-pointer: fine) {
+  .metaChip:hover,
+  .metaChip[data-menu-open="true"] {
+    transition-duration: var(--speed-highlightFadeIn);
+    background: var(--color-control-hover);
+    color: var(--color-text-base);
+  }
+}
+
+.metaDot {
+  color: var(--color-text-faint);
+  user-select: none;
+}
+
+.metaSpacer {
+  flex: 1;
+}
+
+.milestoneMenuBtn {
+  opacity: 0;
+  transition: opacity var(--speed-quickTransition) var(--ease-out-quad);
+}
+.milestoneCard:hover .milestoneMenuBtn,
+.milestoneCard:focus-within .milestoneMenuBtn,
+.milestoneMenuBtn[data-menu-open="true"] {
+  opacity: 1;
+}
+
+/* collapsible body (CAPTURED: transition opacity,height 200ms) */
+.milestoneBody {
+  display: grid;
+  grid-template-rows: 0fr;
+  opacity: 0;
+  transition:
+    grid-template-rows 200ms var(--ease-out-quad),
+    opacity 200ms var(--ease-out-quad);
+  padding-left: 22px;
+}
+.milestoneBody[data-open="true"] {
+  grid-template-rows: 1fr;
+  opacity: 1;
+}
+.milestoneBodyInner {
+  overflow: hidden;
+  min-height: 0;
+}
+
+.milestoneDescription {
+  font-size: var(--font-size-small);
+  font-weight: var(--font-weight-normal);
+  line-height: 1.5;
+  color: var(--color-text-muted);
+  padding: 2px 0 4px;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.addMilestone {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  align-self: flex-start;
+  min-height: 28px;
+  padding: 3px 8px 3px 6px;
+  margin-top: 2px;
+  border-radius: 6px;
+  font-size: var(--font-size-mini);
+  font-weight: var(--font-weight-medium);
+  color: var(--color-text-muted);
+  transition-property: background-color, color;
+  transition-duration: var(--speed-highlightFadeOut);
+  transition-timing-function: var(--ease-out-quad);
+}
+@media (any-hover: hover) and (any-pointer: fine) {
+  .addMilestone:hover {
+    transition-duration: var(--speed-highlightFadeIn);
+    background: var(--color-control-hover);
+    color: var(--color-text-base);
+    --icon-replacement-color: var(--color-text-base);
+  }
+}
+
+/* ================================================================
+ * Floating outline minimap (§6.7)
+ * ================================================================ */
+.minimap {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  z-index: 11;
+}
+
+.minimapBars {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 5px;
+  padding: 6px 4px;
+  transition: opacity var(--speed-quickTransition) var(--ease-out-quad);
+}
+
+.minimapBar {
+  width: 8px;
+  height: 2px;
+  border-radius: 1px;
+  background: var(--color-text-muted);
+}
+
+.minimapBarSub {
+  width: 6px;
+  background: var(--color-text-faint);
+}
+
+.minimap:hover .minimapBars,
+.minimap:focus-within .minimapBars {
+  opacity: 0;
+}
+
+/* blur-glass panel (CAPTURED: surface at 0.7 + blur(12px), rows h24, 12.5px) */
+.minimapPanel {
+  position: absolute;
+  top: 0;
+  right: 0;
+  z-index: 12;
+  min-width: 200px;
+  max-width: 280px;
+  padding: 6px 0;
+  border-radius: var(--radius-row);
+  background: color-mix(in srgb, var(--color-bg-surface) 70%, transparent);
+  -webkit-backdrop-filter: blur(12px);
+  backdrop-filter: blur(12px);
+  box-shadow:
+    0 0 0 var(--thin-pixel) var(--color-border-thin),
+    var(--shadow-medium);
+  opacity: 0;
+  transform: scale(0.5);
+  transform-origin: top right;
+  pointer-events: none;
+  transition:
+    opacity var(--speed-quickTransition) var(--ease-out-quad),
+    transform var(--speed-quickTransition) var(--ease-out-quad);
+}
+
+.minimap:hover .minimapPanel,
+.minimap:focus-within .minimapPanel {
+  opacity: 1;
+  transform: none;
+  pointer-events: auto;
+}
+
+.minimapRow {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  height: 24px;
+  padding: 0 12px;
+  font-size: 12.5px;
+  color: var(--color-text-muted);
+  white-space: nowrap;
+}
+
+@media (any-hover: hover) and (any-pointer: fine) {
+  .minimapRow:hover {
+    color: var(--color-text-base);
+    background: var(--color-hover-bg);
+    --icon-replacement-color: var(--color-text-base);
+  }
+}
+
+.minimapRowSub {
+  padding-left: 34px; /* 12px inline + 22px milestone inset (CAPTURED) */
+}
+
+.minimapRowIcon {
+  display: inline-flex;
+  flex-shrink: 0;
+  color: var(--icon-default-color);
+}
+
+.minimapRowLabel {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* ================================================================
+ * Project issues page — minimal grouped rows
+ * ================================================================ */
+.issuesScroller {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  scrollbar-gutter: stable;
+  outline: none;
+  padding-bottom: 40px;
+}
+
+.issueRow {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  height: 44px;
+  padding: 0 24px 0 16px;
+  transition-property: background-color;
+  transition-duration: var(--speed-highlightFadeOut);
+  transition-timing-function: var(--ease-out-quad);
+}
+
+@media (any-hover: hover) and (any-pointer: fine) {
+  .issueRow:hover {
+    transition-duration: var(--speed-highlightFadeIn);
+    background: var(--color-hover-bg);
+  }
+}
+
+.issueId {
+  flex: none;
+  min-width: 60px;
+  font-size: var(--font-size-mini);
+  font-weight: var(--font-weight-normal);
+  color: var(--color-text-muted);
+  font-variant-numeric: tabular-nums;
+}
+
+.issueStatus {
+  flex: none;
+  display: inline-flex;
+}
+
+.issueTitle {
+  flex: 1;
+  min-width: 0;
+  font-size: var(--font-size-small);
+  font-weight: var(--font-weight-medium);
+  color: var(--color-text-base);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.issueDate {
+  flex: none;
+  font-size: var(--font-size-mini);
+  color: var(--color-text-muted);
+}
+
+/* ================================================================
+ * Project activity page (entry style per capture: icon 16 + 12.5px)
+ * ================================================================ */
+.activityColumn {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  width: 100%;
+  max-width: 80ch;
+  margin-top: 32px;
+  padding-bottom: 48px;
+}
+
+.activityEntry {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+}
+
+.activityIcon {
+  flex: none;
+  width: 16px;
+  height: 16px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 16px; /* CAPTURED: 16px emoji in activity entries */
+  font-family: var(--font-emoji);
+  color: var(--icon-default-color);
+  margin-top: 1px;
+  user-select: none;
+}
+
+.activityText {
+  font-size: 12.5px;
+  font-weight: var(--font-weight-normal);
+  line-height: 1.4;
+  color: var(--color-text-muted);
+  min-width: 0;
+  word-break: break-word;
+}
+
+.activityStrong {
+  font-weight: var(--font-weight-medium);
+  color: var(--color-text-base);
+}
+
+.activityTime {
+  white-space: nowrap;
+}
+
+/* ================================================================
+ * Boot skeleton + not-found (shared idiom with issue detail)
+ * ================================================================ */
+.skeleton {
+  display: block;
+  background: var(--color-bg-shade);
+  border-radius: 6px;
+  animation: projectPulse 1.6s var(--ease-in-out-quad) infinite;
+}
+
+.skeletonTitle {
+  width: 40%;
+  height: 26px;
+}
+
+.skeletonLine {
+  height: 13px;
+  margin-top: 14px;
+}
+
+@keyframes projectPulse {
+  0%,
+  100% {
+    opacity: 0.55;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .skeleton {
+    animation: none;
+  }
+  .milestoneBody,
+  .minimapPanel,
+  .minimapBars,
+  .collapseChevron {
+    transition: none;
+  }
+}
+
+.notFound {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding-bottom: 10vh;
+}
+
+.notFoundTitle {
+  font-size: var(--font-size-regular);
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-text-base);
+}
+
+.notFoundBody {
+  font-size: var(--font-size-small);
+  color: var(--color-text-muted);
+}
+
+/* ================================================================
+ * Picker extras (date popover clear · label swatch)
+ * ================================================================ */
+.dateClear {
+  height: 24px;
+  padding: 0 6px;
+  border-radius: 6px;
+  text-align: left;
+  font-size: var(--font-size-mini);
+  color: var(--color-text-muted);
+  transition-property: background-color, color;
+  transition-duration: var(--speed-highlightFadeOut);
+  transition-timing-function: var(--ease-out-quad);
+}
+
+@media (any-hover: hover) and (any-pointer: fine) {
+  .dateClear:hover {
+    background: var(--color-hover-bg);
+    color: var(--color-text-base);
+    transition-duration: var(--speed-highlightFadeIn);
+  }
+}
+
+.labelSwatch {
+  display: inline-block;
+  width: 10px;
+  height: 10px;
+  border-radius: var(--radius-rounded);
+  background: var(--swatch-color, var(--color-text-faint));
+}
+
+/* ================================================================
+ * Labels + resources rows (§6.3 properties strip · §6.4 resources)
+ * ================================================================ */
+.labelChip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 24px;
+  padding: 2px 8px;
+  border-radius: var(--radius-rounded);
+  border: var(--thin-pixel) solid var(--color-border-solid);
+  font-size: var(--font-size-mini);
+  color: var(--color-text-base);
+  transition-property: background-color;
+  transition-duration: var(--speed-highlightFadeOut);
+  transition-timing-function: var(--ease-out-quad);
+}
+
+@media (any-hover: hover) and (any-pointer: fine) {
+  .labelChip:hover,
+  .labelChip[data-menu-open="true"] {
+    background: var(--color-control-hover);
+    transition-duration: var(--speed-highlightFadeIn);
+  }
+}
+
+.resourceList {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  width: 100%;
+  min-width: 0;
+}
+
+.resourceRow {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 28px;
+  min-width: 0;
+  padding: 0 6px;
+  border-radius: 6px;
+  transition-property: background-color;
+  transition-duration: var(--speed-highlightFadeOut);
+  transition-timing-function: var(--ease-out-quad);
+}
+
+@media (any-hover: hover) and (any-pointer: fine) {
+  .resourceRow:hover {
+    background: var(--color-hover-bg);
+    transition-duration: var(--speed-highlightFadeIn);
+  }
+}
+
+.resourceLink {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: var(--font-size-small);
+  color: var(--color-text-base);
+  cursor: var(--external);
+}
+
+.resourceLink:hover {
+  text-decoration: underline;
+}
+
+.resourceDelete {
+  flex: none;
+  opacity: 0;
+  transition: opacity var(--speed-quickTransition) var(--ease-out-quad);
+}
+
+.resourceRow:hover .resourceDelete,
+.resourceRow:focus-within .resourceDelete {
+  opacity: 1;
+}
+
+/* ================================================================
+ * Project updates (§10.2 update strip + posted updates)
+ * ================================================================ */
+.updatesList {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 16px;
+}
+
+.updateCard {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 16px;
+  border: var(--thin-pixel) solid var(--color-border-solid);
+  border-radius: var(--radius-card);
+  background: var(--color-bg-surface);
+}
+
+.updateHeader {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+
+.updateAuthor {
+  font-size: var(--font-size-small);
+  font-weight: var(--font-weight-medium);
+  color: var(--color-text-base);
+}
+
+.updateHealth {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: var(--font-size-mini);
+  color: var(--color-text-muted);
+}
+
+.updateDate {
+  margin-left: auto;
+  font-size: var(--font-size-mini);
+  color: var(--color-text-faint);
+  font-variant-numeric: tabular-nums;
+}
+
+.updateBody {
+  font-size: var(--font-size-small);
+  line-height: 1.6;
+  color: var(--color-text-base);
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.updateDelete {
+  opacity: 0;
+  transition: opacity var(--speed-quickTransition) var(--ease-out-quad);
+}
+
+.updateCard:hover .updateDelete,
+.updateCard:focus-within .updateDelete {
+  opacity: 1;
+}
+
+/* ================================================================
+ * Project issues tab chrome (milestone scope chip)
+ * ================================================================ */
+.scopeBar {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 20px 0;
+}
+
+.scopeChip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 24px;
+  padding: 0 8px;
+  border-radius: var(--radius-rounded);
+  border: var(--thin-pixel) solid var(--color-border-solid);
+  font-size: var(--font-size-mini);
+  color: var(--color-text-base);
+}
+
+.scopeClear {
+  display: inline-grid;
+  place-items: center;
+  width: 16px;
+  height: 16px;
+  border-radius: var(--radius-rounded);
+  color: var(--color-text-muted);
+  transition-property: background-color, color;
+  transition-duration: var(--speed-highlightFadeOut);
+  transition-timing-function: var(--ease-out-quad);
+}
+
+@media (any-hover: hover) and (any-pointer: fine) {
+  .scopeClear:hover {
+    background: var(--color-control-hover);
+    color: var(--color-text-base);
+    transition-duration: var(--speed-highlightFadeIn);
+  }
+}
+
+/* ================================================================
+ * Confirm dialog (delete project)
+ * ================================================================ */
+.confirmDialog {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 16px;
+}
+
+.confirmTitle {
+  font-size: var(--font-size-small);
+  font-weight: var(--font-weight-medium);
+  color: var(--color-text-base);
+}
+
+.confirmBody {
+  font-size: var(--font-size-small);
+  line-height: 1.5;
+  color: var(--color-text-muted);
+}
+
+.confirmFooter {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: 4px;
+}

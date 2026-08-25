@@ -1,0 +1,211 @@
+/*
+ * Display Options popover — MASTER_PROMPT.md §11.1 + §16.13 (CAPTURED).
+ * Surface follows the §6.3 menu contract (elevated bg, hairline solid
+ * border, radius 8, shadow-medium) at a stable 320px width with 8px
+ * padding; rows are 32px label/control pairs; List|Board switch is
+ * instant (no animation); hover idiom §2.4 (0ms in / .15s out); cursor
+ * stays the default arrow (--pointer).
+ */
+
+.popover {
+  width: 320px;
+  min-width: 320px;
+  padding: 8px;
+  background: var(--color-bg-elevated);
+  border: 1px solid var(--color-border-solid);
+  border-radius: 8px;
+  box-shadow: var(--shadow-medium);
+  z-index: var(--z-overlay);
+  outline: none;
+  max-height: var(--radix-popover-content-available-height, 80vh);
+  overflow-y: auto;
+  overflow-x: hidden;
+}
+
+.popover[data-state="open"] {
+  animation: displayOptionsEnter 120ms var(--ease-out-quad);
+}
+.popover[data-state="closed"] {
+  animation: displayOptionsExit 100ms var(--ease-out-quad) forwards;
+}
+
+@keyframes displayOptionsEnter {
+  from {
+    opacity: 0;
+    transform: translateY(-2px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+@keyframes displayOptionsExit {
+  from {
+    opacity: 1;
+  }
+  to {
+    opacity: 0;
+  }
+}
+
+/* ---- trigger badge: 6px accent dot while deviated from defaults ---- */
+/* positioned against the 28px IconButton (.button is position:relative) */
+.badgeDot {
+  position: absolute;
+  top: 3px;
+  right: 3px;
+  width: 6px;
+  height: 6px;
+  border-radius: var(--radius-rounded);
+  background: var(--color-accent);
+  pointer-events: none;
+}
+
+/* ---- List | Board segmented control (two-cell pill group) ---- */
+.segmented {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 2px;
+  padding: 2px;
+  border-radius: 6px;
+  background: var(--color-bg-shade);
+  margin-bottom: 8px;
+}
+
+.segment {
+  height: 24px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  border-radius: var(--control-border-radius);
+  background: transparent;
+  color: var(--color-text-muted);
+  font-family: inherit;
+  font-size: var(--font-size-mini);
+  font-weight: var(--font-weight-medium);
+  white-space: nowrap;
+  cursor: var(--pointer);
+  transition-property: background-color, color;
+  transition-duration: var(--speed-highlightFadeOut);
+  transition-timing-function: var(--ease-out-quad);
+}
+@media (any-hover: hover) and (any-pointer: fine) {
+  .segment:not([data-active="true"]):hover {
+    transition-duration: var(--speed-highlightFadeIn);
+    color: var(--color-text-base);
+  }
+}
+/* active cell tint — flips instantly (no transition on box-shadow) */
+.segment[data-active="true"] {
+  background: var(--color-bg-elevated);
+  color: var(--color-text-base);
+  box-shadow: 0 0 0 1px var(--color-border-thin), var(--shadow-low);
+}
+
+/* ---- option rows: 13px label left, control right, 32px tall ---- */
+.row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  height: 32px;
+}
+
+.rowLabel {
+  min-width: 0;
+  font-size: var(--font-size-small);
+  font-weight: var(--font-weight-normal);
+  color: var(--color-text-muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.rowControl {
+  display: inline-flex;
+  align-items: center;
+  flex-shrink: 0;
+}
+
+/* ---- 12px muted section headers (List/Board options, properties) ---- */
+.sectionHeader {
+  margin: 10px 0 2px;
+  font-size: var(--font-size-mini);
+  font-weight: var(--font-weight-normal);
+  color: var(--color-text-muted);
+}
+
+/* full-bleed hairline across the 8px padding */
+.separator {
+  height: 1px;
+  background: var(--color-border-thin);
+  margin: 8px -8px;
+}
+
+/* ---- display property chip grid (wraps, stable menu width) ---- */
+.chipGrid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  padding: 4px 0 2px;
+}
+
+.chip {
+  height: 24px;
+  padding: 0 8px;
+  border: none;
+  border-radius: var(--control-border-radius);
+  background: transparent;
+  box-shadow: inset 0 0 0 1px var(--color-border-solid);
+  color: var(--color-text-faint);
+  font-family: inherit;
+  font-size: var(--font-size-mini);
+  font-weight: var(--font-weight-medium);
+  white-space: nowrap;
+  cursor: var(--pointer);
+  transition-property: background-color, color, box-shadow;
+  transition-duration: var(--speed-highlightFadeOut);
+  transition-timing-function: var(--ease-out-quad);
+}
+@media (any-hover: hover) and (any-pointer: fine) {
+  .chip:not([aria-pressed="true"]):hover {
+    transition-duration: var(--speed-highlightFadeIn);
+    color: var(--color-text-muted);
+    box-shadow: inset 0 0 0 1px var(--color-border-hover);
+  }
+}
+/* active chip: solid fill, base text, no ring */
+.chip[aria-pressed="true"] {
+  background: var(--color-control-selected);
+  box-shadow: inset 0 0 0 1px transparent;
+  color: var(--color-text-base);
+}
+
+/* ---- deviation footer: Reset · Set default for everyone ---- */
+.footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin: 10px -8px 0;
+  padding: 8px 8px 0;
+  border-top: 1px solid var(--color-border-thin);
+}
+
+/* accent-text ghost button; !important holds the accent through the
+   ghost hover/active color swap in button.module.css */
+.accentButton {
+  color: var(--color-accent) !important;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .popover[data-state="open"],
+  .popover[data-state="closed"] {
+    animation: none;
+  }
+  .segment,
+  .chip {
+    transition-duration: 0s;
+  }
+}

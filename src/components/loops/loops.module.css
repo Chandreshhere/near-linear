@@ -1,0 +1,346 @@
+/*
+ * Loops — MASTER_PROMPT.md §10.7 (empty state) + §21 (builder, versions,
+ * run history). Geometry follows the settings-card idiom: centered 720px
+ * column, 48px section rhythm, 13px/500 labels with 12px/450 descriptions.
+ */
+
+/* ---------- list ---------- */
+.listScroller {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  scrollbar-gutter: stable;
+}
+.list {
+  display: flex;
+  flex-direction: column;
+  padding: 8px 16px 40px;
+}
+.row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  height: 44px;
+  padding: 0 8px;
+  border-radius: var(--radius-row);
+  color: var(--color-text-base);
+}
+.row:hover {
+  background: var(--color-hover-bg);
+}
+.rowIcon {
+  flex: none;
+  color: var(--color-text-muted);
+  display: grid;
+  place-items: center;
+}
+.rowMain {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+.rowName {
+  font-size: var(--font-size-small);
+  font-weight: var(--font-weight-medium);
+  color: var(--color-text-title);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.rowTrigger {
+  font-size: var(--font-size-mini);
+  color: var(--color-text-muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.rowMeta {
+  flex: none;
+  font-size: var(--font-size-mini);
+  color: var(--color-text-faint);
+  font-variant-numeric: tabular-nums;
+}
+.rowMenuSlot {
+  flex: none;
+  width: 24px;
+  opacity: 0;
+}
+.row:hover .rowMenuSlot,
+.rowMenuSlot:focus-within,
+.rowMenuSlot[data-menu-open="true"] {
+  opacity: 1;
+}
+
+/* status badge — Draft / Published / Disabled */
+.badge {
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  height: 20px;
+  padding: 0 8px;
+  border-radius: var(--radius-rounded);
+  font-size: var(--font-size-micro);
+  font-weight: var(--font-weight-medium);
+  color: var(--color-text-muted);
+  box-shadow: 0 0 0 var(--thin-pixel) var(--color-border-thin) inset;
+}
+.badge[data-status="published"] {
+  color: var(--color-accent);
+  box-shadow: 0 0 0 var(--thin-pixel) var(--color-accent) inset;
+}
+.badge[data-status="disabled"] {
+  color: var(--color-text-faint);
+}
+
+/* ---------- builder ---------- */
+.builderScroller {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  scrollbar-gutter: stable;
+}
+.builder {
+  width: 100%;
+  max-width: 720px;
+  margin: 0 auto;
+  padding: 24px 24px 64px;
+  display: flex;
+  flex-direction: column;
+  gap: 40px;
+}
+.section {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.sectionHead {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.sectionTitle {
+  font-size: var(--font-size-small);
+  font-weight: var(--font-weight-medium);
+  color: var(--color-text-title);
+}
+.sectionHint {
+  font-size: var(--font-size-mini);
+  color: var(--color-text-muted);
+  line-height: 1.5;
+}
+
+.triggerGrid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+}
+.triggerCard {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 10px 12px;
+  text-align: left;
+  border-radius: var(--radius-row);
+  background: var(--color-bg-surface);
+  box-shadow: 0 0 0 var(--thin-pixel) var(--color-border-thin);
+  font-size: var(--font-size-small);
+  font-weight: var(--font-weight-medium);
+  color: var(--color-text-base);
+}
+.triggerCard:hover {
+  background: var(--color-bg-elevated);
+}
+.triggerCard[data-selected="true"] {
+  background: var(--color-selected-bg);
+  box-shadow: 0 0 0 var(--thin-pixel) var(--color-accent);
+  color: var(--color-text-title);
+}
+.triggerHint {
+  font-size: var(--font-size-mini);
+  font-weight: var(--font-weight-normal);
+  color: var(--color-text-muted);
+  line-height: 1.4;
+}
+
+.conditionRow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.conditionIs {
+  font-size: var(--font-size-mini);
+  color: var(--color-text-muted);
+}
+.conditionEmpty {
+  font-size: var(--font-size-mini);
+  color: var(--color-text-faint);
+}
+
+.instructions {
+  width: 100%;
+  min-height: 140px;
+  padding: 10px 12px;
+  border-radius: var(--radius-row);
+  background: var(--color-bg-surface);
+  box-shadow: 0 0 0 var(--thin-pixel) var(--color-border-thin);
+  font-family: var(--font-regular);
+  font-size: var(--font-size-small);
+  line-height: 1.6;
+  color: var(--color-text-base);
+  resize: vertical;
+  outline: none;
+  user-select: text;
+}
+.instructions:focus {
+  box-shadow: 0 0 0 var(--thin-pixel) var(--focus-ring-color);
+}
+
+.toggleRow {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-height: 40px;
+  padding: 6px 0;
+  border-bottom: var(--thin-pixel) solid var(--color-border-thin);
+}
+.toggleRow:last-child {
+  border-bottom: none;
+}
+.toggleMain {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+.toggleLabel {
+  font-size: var(--font-size-small);
+  font-weight: var(--font-weight-medium);
+  color: var(--color-text-base);
+}
+.toggleHint {
+  font-size: var(--font-size-mini);
+  color: var(--color-text-muted);
+}
+
+.footer {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding-top: 16px;
+  border-top: var(--thin-pixel) solid var(--color-border-thin);
+}
+.footerSpacer {
+  flex: 1;
+}
+.footerNote {
+  font-size: var(--font-size-mini);
+  color: var(--color-text-faint);
+}
+
+/* ---------- run history ---------- */
+.runList {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.runRow {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 10px 12px;
+  border-radius: var(--radius-row);
+  background: var(--color-bg-surface);
+  box-shadow: 0 0 0 var(--thin-pixel) var(--color-border-thin);
+}
+.runHead {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.runOutcome {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: var(--font-size-small);
+  font-weight: var(--font-weight-medium);
+  color: var(--color-text-base);
+}
+.runDot {
+  width: 6px;
+  height: 6px;
+  border-radius: var(--radius-rounded);
+  background: var(--color-gray-status);
+}
+.runDot[data-outcome="success"] {
+  background: var(--color-accent);
+}
+.runDot[data-outcome="failed"] {
+  background: var(--color-red);
+}
+.runMeta {
+  margin-left: auto;
+  font-size: var(--font-size-mini);
+  color: var(--color-text-faint);
+  font-variant-numeric: tabular-nums;
+}
+.runDetail {
+  font-size: var(--font-size-mini);
+  color: var(--color-text-muted);
+}
+.runActions {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding-top: 4px;
+  border-top: var(--thin-pixel) solid var(--color-border-thin);
+}
+.runAction {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: var(--font-size-mini);
+  color: var(--color-text-muted);
+}
+.runActionDot {
+  width: 3px;
+  height: 3px;
+  flex: none;
+  border-radius: var(--radius-rounded);
+  background: var(--color-text-faint);
+}
+
+/* ---------- shared bits ---------- */
+.emptyIllustration {
+  color: var(--color-text-faint);
+}
+.nameInput {
+  width: 100%;
+  height: 34px;
+  padding: 0 10px;
+  border-radius: var(--radius-row);
+  background: var(--color-bg-surface);
+  box-shadow: 0 0 0 var(--thin-pixel) var(--color-border-thin);
+  font-size: var(--font-size-small);
+  color: var(--color-text-base);
+  outline: none;
+  user-select: text;
+}
+.nameInput:focus {
+  box-shadow: 0 0 0 var(--thin-pixel) var(--focus-ring-color);
+}
+.backLink {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  border-radius: var(--radius-rounded);
+  color: var(--color-text-muted);
+}
+.backLink:hover {
+  background: var(--color-control-hover);
+  color: var(--color-text-base);
+}

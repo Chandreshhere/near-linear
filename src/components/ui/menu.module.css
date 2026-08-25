@@ -1,0 +1,179 @@
+/*
+ * Menu surface — shared by DropdownMenu (Menu.tsx) and ContextMenu
+ * (ContextMenu.tsx). Values per MASTER_PROMPT.md §6.2–6.3 (CAPTURED):
+ * elevated panel, 1px hairline solid border, radius 8, shadow-medium,
+ * padding 4, min-width 180; enter fade + drop 2px 120ms ease-out-quad,
+ * exit fade 100ms.
+ */
+
+/*
+ * Boxless trigger wrapper — ContextMenu ONLY. A context menu anchors to the
+ * pointer, so a wrapper that generates no box is harmless there.
+ *
+ * Menu.tsx must never use it: an element with `display: contents` has no box,
+ * so Radix's popper measured a 0×0 rect at (0,0) and every dropdown opened in
+ * the viewport corner instead of under its trigger. Menu.tsx clones the
+ * caller's element as the trigger instead.
+ */
+.triggerWrap {
+  display: contents;
+}
+
+/* ---------- surface ---------- */
+.content {
+  background: var(--color-bg-elevated);
+  border: 1px solid var(--color-border-solid);
+  border-radius: 8px;
+  box-shadow: var(--shadow-medium);
+  padding: 4px;
+  min-width: 180px;
+  z-index: var(--z-overlay);
+  outline: none;
+  max-height: var(
+    --radix-dropdown-menu-content-available-height,
+    var(--radix-context-menu-content-available-height, 80vh)
+  );
+  overflow-y: auto;
+  overflow-x: hidden;
+}
+
+.content[data-state="open"] {
+  animation: menuEnter 120ms var(--ease-out-quad);
+}
+.content[data-state="closed"] {
+  animation: menuExit 100ms var(--ease-out-quad) forwards;
+}
+
+@keyframes menuEnter {
+  from {
+    opacity: 0;
+    transform: translateY(-2px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+@keyframes menuExit {
+  from {
+    opacity: 1;
+  }
+  to {
+    opacity: 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .content[data-state="open"],
+  .content[data-state="closed"] {
+    animation: none;
+  }
+}
+
+/* ---------- item ---------- */
+.item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  height: 28px;
+  padding: 0 8px;
+  border-radius: var(--control-border-radius);
+  font-size: var(--font-size-small);
+  font-weight: var(--font-weight-normal);
+  color: var(--color-text-base);
+  white-space: nowrap;
+  user-select: none;
+  outline: none;
+  /* hover idiom (§2.4): fade out .15s at rest, snap in 0s when highlighted */
+  transition-property: background-color, color;
+  transition-duration: var(--speed-highlightFadeOut);
+  transition-timing-function: var(--ease-out-quad);
+}
+
+/* data-highlighted covers pointer AND keyboard cursor (Radix);
+   data-state="open" keeps a submenu's parent item lit (§6.2) */
+.item[data-highlighted],
+.item[data-state="open"] {
+  background: var(--color-hover-bg);
+  transition-duration: var(--speed-highlightFadeIn);
+  --icon-replacement-color: var(--color-text-base);
+}
+
+.item[data-disabled] {
+  color: var(--color-text-faint);
+  --icon-replacement-color: var(--icon-faint-color);
+  pointer-events: none;
+}
+
+/* 16px muted icon slot */
+.itemIcon {
+  width: 16px;
+  height: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  color: var(--color-text-muted);
+}
+
+.itemLabel {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* right-aligned shortcut keycaps (§6.4 chip spec: mono .75em, sub fill,
+   hairline border w/ 2px bottom, radius 4, padding 1px 5px) */
+.shortcut {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  flex-shrink: 0;
+  margin-left: auto;
+  padding-left: 8px;
+}
+.keycap {
+  font-family: var(--font-monospace);
+  font-size: 0.75em;
+  line-height: 1.2;
+  color: var(--color-text-muted);
+  background: var(--color-bg-sub);
+  border: 1px solid var(--color-border-thin);
+  border-bottom-width: 2px;
+  border-radius: 4px;
+  padding: 1px 5px;
+}
+
+/* trailing ✓ for `checked` rows (property submenus) */
+.itemCheck {
+  display: inline-flex;
+  align-items: center;
+  flex-shrink: 0;
+  margin-left: auto;
+  padding-left: 8px;
+  color: var(--color-text-muted);
+}
+.shortcut + .itemCheck {
+  margin-left: 0;
+  padding-left: 6px;
+}
+
+/* submenu chevron at right */
+.subChevron {
+  flex-shrink: 0;
+  margin-left: auto;
+  color: var(--color-text-muted);
+}
+.itemLabel + .subChevron,
+.shortcut + .subChevron,
+.itemCheck + .subChevron {
+  margin-left: 0;
+}
+
+/* ---------- separator ---------- */
+.separator {
+  height: 1px;
+  background: var(--color-border-thin);
+  margin: 4px 0;
+}

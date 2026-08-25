@@ -1,0 +1,46 @@
+/*
+ * Destructive-confirm body for the issue context menu's "Delete issue…"
+ * (MASTER_PROMPT.md §6.3 + §7.6 dialog rhythm). Tokens only.
+ */
+
+.confirm {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 20px;
+}
+
+.confirmTitle {
+  font-size: var(--font-size-regular);
+  font-weight: var(--font-weight-semibold);
+  line-height: 1.4;
+  color: var(--color-text-title);
+  margin: 0;
+}
+
+.confirmBody {
+  font-size: var(--font-size-small);
+  font-weight: var(--font-weight-normal);
+  line-height: 1.5;
+  color: var(--color-text-muted);
+  margin: 0;
+}
+
+.confirmActions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+/* Destructive primary — same geometry as the accent button, red fill. */
+.destructive {
+  background: var(--color-red);
+  color: #ffffff;
+}
+@media (any-hover: hover) and (any-pointer: fine) {
+  .destructive:hover {
+    background: var(--color-red-text);
+  }
+}

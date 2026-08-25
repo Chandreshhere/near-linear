@@ -1,0 +1,42 @@
+/*
+ * Empty state — MASTER_PROMPT.md §10.5/§10.6 (centered column, 440px).
+ */
+
+.root {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  gap: 12px;
+  max-width: 440px;
+  height: 100%;
+  margin: auto;
+  padding: 24px;
+}
+
+.illustration {
+  display: grid;
+  place-items: center;
+  color: var(--color-text-faint);
+}
+
+.heading {
+  font-size: var(--font-size-regular); /* 15px */
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-text-title);
+}
+
+.body {
+  font-size: var(--font-size-small); /* 13px */
+  font-weight: var(--font-weight-normal); /* 450 */
+  color: var(--color-text-muted);
+  line-height: 1.6;
+}
+
+.actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-top: 8px;
+}
