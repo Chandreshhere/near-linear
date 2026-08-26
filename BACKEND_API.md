@@ -31,6 +31,7 @@ source. Nothing here requires changing the frontend.
 8. [Permissions & multi-user](#8-permissions--multi-user)
 9. [Migration & versioning](#9-migration--versioning)
 10. [Conformance checklist](#10-conformance-checklist)
+11. [MCP server](#11-mcp-server)
 - [Appendix A — file map](#appendix-a--file-map)
 - [Appendix B — the whole contract in TypeScript](#appendix-b--the-whole-contract-in-typescript)
 - [Appendix C — where the older docs disagree with the code](#appendix-c--where-the-older-docs-disagree-with-the-code)
@@ -156,8 +157,9 @@ client depends on, not properties of HTTP.
 
 ### 2.1 Environment variables
 
-Both are read at build time by Next.js (`NEXT_PUBLIC_` prefix) and are the *only* two variables
-the data layer reads (`grep -rn "process.env.NEXT_PUBLIC" src/` returns exactly two hits).
+Two client variables decide how the app talks to a backend. They are read at build time by
+Next.js (`NEXT_PUBLIC_` prefix) and are the only two the data layer reads
+(`grep -rn "process.env.NEXT_PUBLIC" src/` returns exactly two hits).
 
 | Variable | Read at | Values | Meaning |
 |---|---|---|---|
@@ -170,7 +172,18 @@ NEXT_PUBLIC_SYNC_TRANSPORT=http
 NEXT_PUBLIC_API_BASE_URL=https://api.example.com
 ```
 
-With that, the client requests `https://api.example.com/api/sync/bootstrap`, etc. The path
+The rest are **server-side** and are read at request time, so changing one needs a restart but not
+a rebuild. None of them reaches the browser.
+
+| Variable | Read by | Meaning |
+|---|---|---|
+| `ALLOW_SYNC_MOCK` | every route under `src/app/api/` | `1` lets the dev mocks answer in `NODE_ENV=production` (§1.1). Off by default; the routes 404 instead. |
+| `MCP_TOKEN` | `src/app/api/mcp/route.ts` | Shared secret for the MCP server. When set, every request needs `Authorization: Bearer <token>`. **Set it on any deployment** (§11.3). |
+| `MCP_ACTOR` | `src/server/mcp/tools.ts` | Workspace member that MCP and webhook writes are attributed to (name, email or id). Defaults to the first member. |
+| `INTEGRATIONS_SIGNING_SECRET` | `src/app/api/integrations/inbound/route.ts` | HMAC secret for the inbound webhook. When set, `X-Signature` is verified (§7.3). **Set it on any deployment.** |
+| `INTEGRATIONS_RULES` | `src/server/integrations/rules.ts` | JSON array of the server's channel→team routing rules (§7.3a). Unset = one default rule: any channel → the first team, on `/task`. |
+
+With the client variables set, the app requests `https://api.example.com/api/sync/bootstrap`, etc. The path
 segment `/api/sync/...` is hard-coded in `http.ts` — put your prefix in the base URL if you need
 a different mount point (e.g. `NEXT_PUBLIC_API_BASE_URL=https://api.example.com/v1` yields
 `https://api.example.com/v1/api/sync/bootstrap`).
@@ -1250,26 +1263,43 @@ to the originator — but **do not** suppress it (§5.5), and never use it for a
 
 ## 7. Integrations webhook contract
 
-Source: the doc comment at `src/app/api/integrations/inbound/route.ts:1-72` (which is the intended
-contract, written verbatim for this document) plus the reference pipeline at
-`src/lib/integrations/store.ts:IntegrationsStore.ingest`.
+Source: `src/app/api/integrations/inbound/route.ts` (the receiver, now a real pipeline),
+`src/lib/integrations/shared.ts` (the rule shape, the trigger vocabulary and `extractTask` — shared
+verbatim by both sides), `src/server/integrations/rules.ts` (the server's rules source) and
+`src/lib/integrations/store.ts:IntegrationsStore.ingest` (the in-browser pipeline the settings-page
+simulator drives).
 
 > **Shorthand for this section only:** `store.ts` means **`src/lib/integrations/store.ts`** (not the
-> sync object pool `src/lib/data/store.ts`), and `route.ts` means
+> sync object pool `src/lib/data/store.ts`), `shared.ts` means
+> **`src/lib/integrations/shared.ts`**, and `route.ts` means
 > **`src/app/api/integrations/inbound/route.ts`**.
 
-### 7.1 What already works, and what is missing
+### 7.1 What is real now
 
-Everything except the receiver runs in the client today: connections (simulated OAuth), routing
-rules, trigger modes, task extraction, real issue creation through the optimistic queue, and the
-activity log. It is driven by the message simulator on Settings → Integrations. The only missing
-piece is a server that actually receives provider events and pushes the resulting issue through
-the sync engine.
+The receiver is **no longer a shape check**. `POST /api/integrations/inbound` verifies the
+signature, resolves a routing rule, extracts the task and creates a real issue, answering
+`202 { accepted: true, identifier }`. It creates that issue through the same tool layer the MCP
+server uses (`src/server/mcp/tools.ts#createIssueFromChat`), so the two entry points share one
+implementation of issue creation — and therefore one implementation of numbering, sort order,
+default state and activity rows.
 
-The mock route validates the request shape and answers `202`. It explicitly cannot do more:
-routing rules and the activity log live in `localStorage` under the key `"integrations"`
-(`store.ts:INTEGRATIONS_STORAGE_KEY`), and issues are created through the client-side transaction
-queue — none of which is reachable from a server route.
+The parts that can be shared between browser and server **are** shared:
+`src/lib/integrations/shared.ts` holds the `RoutingRule` shape, the trigger vocabulary and
+`extractTask`, and both `src/lib/integrations/store.ts` (client) and the route (server) import it.
+`store.ts` re-exports every one of those names, so nothing that imported them before had to change.
+
+Two things remain browser-side, and the receiver is honest about both:
+
+- **The connection list and the activity log** still live in `localStorage` under `"integrations"`.
+  The server has no connection registry; it authenticates the *request*, not the *connection*.
+- **The routing rules the settings page edits** are that browser's. The server reads its own from
+  `INTEGRATIONS_RULES` (§7.3a). Moving both into a database is §7.6.
+
+And the same architectural caveat as §11.1 applies: the issue is created in `ServerSyncStore`, so
+it appears in the app for real when the app runs with `NEXT_PUBLIC_SYNC_TRANSPORT=http` (or against
+your backend). Under the default local transport it lands in the server's copy of the workspace,
+and the settings-page **simulator** — which runs the identical pipeline inside the tab — is how you
+see it in your own browser.
 
 ### 7.2 `POST {base}/api/integrations/inbound`
 
@@ -1277,7 +1307,7 @@ One normalized chat message from a connected provider. Provider adapters (Slack 
 bot messaging endpoint) map native payloads onto this shape before calling it — or your backend
 implements that normalization inline and treats this route as the provider-facing webhook itself.
 
-**Request** (`application/json`, schema at `route.ts:79-85`)
+**Request** (`application/json`)
 
 | Field | Type | Req | Notes |
 |---|---|---|---|
@@ -1286,6 +1316,7 @@ implements that normalization inline and treats this route as the provider-facin
 | `channel` | string, min 1 | ✔ | Channel id **or** name the message was posted in. |
 | `author` | string, min 1 | ✔ | Display name of the message author. |
 | `text` | string, min 1 | ✔ | Raw text, trigger token included. |
+| `messageId` | string, min 1 | | Provider event id (Slack `event_id`, Teams activity `id`). Optional, but supplying it is what makes a provider retry safe — see §7.5. |
 
 ```json
 {
@@ -1293,7 +1324,8 @@ implements that normalization inline and treats this route as the provider-facin
   "workspaceName": "synquic",
   "channel": "eng",
   "author": "sana",
-  "text": "/task Fix retailer login priority high"
+  "text": "/task Fix retailer login priority high",
+  "messageId": "Ev09ABCDEF"
 }
 ```
 
@@ -1301,26 +1333,90 @@ implements that normalization inline and treats this route as the provider-facin
 
 | Status | Body | When |
 |---|---|---|
-| `202` | `{ "accepted": true }` | Queued for processing. **Always 202, even when the message will be logged as ignored** — trigger-mode and rule matching are pipeline outcomes, not transport errors. |
-| `400` | `{ "accepted": false, "error": string }` (the mock adds `details` with zod issues) | Malformed payload. |
-| `401` | `{ "accepted": false, "error": string }` | Signature verification failed. |
+| `202` | `{ "accepted": true, "identifier": "TRENDZO-41" }` | An issue was created. |
+| `202` | `{ "accepted": true, "ignored": "<reason>" }` | Well-formed and authentic, but no issue: no rule matched, the trigger did not fire, nothing was left to use as a title, or the routed team is gone. **Always 202** — rule and trigger matching are pipeline outcomes, not transport errors. |
+| `202` | `{ "accepted": true, "duplicate": true, "identifier"?: … }` | A `messageId` already processed. |
+| `400` | `{ "accepted": false, "error": string }` (+ `details` with the zod issues) | Malformed payload. |
+| `401` | `{ "accepted": false, "error": string }` | Signature missing, malformed, stale or wrong. |
+| `404` | `{ "error": … }` | The §1.1 production gate (`NODE_ENV=production` without `ALLOW_SYNC_MOCK=1`). |
 
-### 7.3 Signature verification (REQUIRED in the real receiver; skipped in the mock)
+A `warning` field is added whenever `INTEGRATIONS_RULES` could not be read as written; the request
+still processes against the built-in default rule.
 
-| Provider | Verification |
+### 7.3 Signature verification
+
+Enforced whenever **`INTEGRATIONS_SIGNING_SECRET`** is set; skipped when it is not, which is a
+development convenience and nothing more — **set it on any deployment.**
+
+```
+X-Signature: sha256=<hex>
+X-Timestamp: <unix seconds>      # optional, strongly recommended
+```
+
+- `hex` = `HMAC-SHA256(secret, signedPayload)` as lowercase hex, compared with
+  `crypto.timingSafeEqual` (a length check first, since `timingSafeEqual` throws on mismatched
+  lengths — and the length of a signature is not a secret).
+- `signedPayload` is the **raw request body** — captured before JSON parsing — or
+  `"<timestamp>.<rawBody>"` when `X-Timestamp` is present.
+- With a timestamp, a request more than **300 seconds** off the server clock is rejected. That
+  window is what makes a captured request unreplayable; **without** a timestamp, replay protection
+  rests on `messageId` de-duplication alone. Send the timestamp.
+
+```bash
+BODY='{"provider":"slack","workspaceName":"synquic","channel":"bugs","author":"raj","text":"…","messageId":"Ev1"}'
+TS=$(date +%s)
+SIG=$(printf '%s.%s' "$TS" "$BODY" | openssl dgst -sha256 -hmac "$INTEGRATIONS_SIGNING_SECRET" -hex | sed 's/^.*= //')
+curl -X POST "$BASE/api/integrations/inbound" \
+  -H 'Content-Type: application/json' \
+  -H "X-Timestamp: $TS" -H "X-Signature: sha256=$SIG" -d "$BODY"
+```
+
+Provider-native schemes are normalized by the adapter that calls this route, exactly as the body
+is. For reference, those schemes are:
+
+| Provider | Native verification |
 |---|---|
-| `slack` | Verify `X-Slack-Signature` = HMAC-SHA256 over `` `v0:{X-Slack-Request-Timestamp}:{rawBody}` `` with the app's signing secret, and **reject timestamps older than 5 minutes**. |
-| `msteams` | Verify the `Authorization: HMAC {base64}` header — HMAC-SHA256 of the raw body with the outgoing-webhook security token. |
+| `slack` | `X-Slack-Signature` = `v0=` + HMAC-SHA256 over `` `v0:{X-Slack-Request-Timestamp}:{rawBody}` `` with the app's signing secret; reject timestamps older than 5 minutes. |
+| `msteams` | `Authorization: HMAC {base64}` — HMAC-SHA256 of the raw body with the outgoing-webhook security token. |
 
-Both require the **raw** request body. Capture it before JSON parsing.
+### 7.3a Where the server's routing rules come from
+
+`INTEGRATIONS_RULES` — a JSON array, read per request (`src/server/integrations/rules.ts`).
+
+```bash
+INTEGRATIONS_RULES='[
+  {"provider":"slack","workspace":"synquic","channel":"bugs","team":"PGME","trigger":"all","priority":1},
+  {"channel":"*","team":"TRENDZO","trigger":"command"}
+]'
+```
+
+| Field | Default | Notes |
+|---|---|---|
+| `provider` | `"*"` | `"slack"`, `"msteams"` or `"*"`. |
+| `workspace` | `"*"` | Provider workspace/tenant name, case-insensitive, or `"*"`. |
+| `channel` | `"*"` | Channel id or name, case-insensitive, or `"*"`. |
+| `team` | — | **Required.** Team key, name or id; resolved leniently at ingest time. |
+| `trigger` | `"command"` | `"mention"`, `"command"` or `"all"`. |
+| `priority` | — | `0–4`, applied only when the message itself names no priority. |
+| `labels` | — | Label **names**; unknown names are skipped rather than invented. |
+
+Matching mirrors the browser exactly: provider and workspace must match (or be `"*"`), then a rule
+naming the **exact channel wins over a `"*"` catch-all**.
+
+**Unset**, one built-in rule applies: every channel → the workspace's **first team**, trigger
+`command`. So `/task …` works out of the box and nothing else does. A malformed variable falls back
+to that same default rather than taking the webhook down, and says so in the response's `warning`.
 
 ### 7.4 Processing pipeline
 
-Re-implement `src/lib/integrations/store.ts:ingest` server-side. The reference implementation is
-authoritative; these are its exact steps.
+These are the steps, in order. Steps 3–5 are literally shared code — the route and the browser
+store call the same `pickRule`, `triggerRejection` and `extractTask` out of `shared.ts`. Steps 1, 2
+and 7 are the browser-only part: the server has no connection registry and no activity log, so it
+skips straight from "authentic request" to routing (§7.1). Both are described because your backend
+will want all seven once the state moves into a database (§7.6).
 
-**1 — Resolve the connection** by `(provider, workspaceName)`. Unknown → ignored
-(`"Unknown connection"`). `status !== "connected"` → ignored
+**1 — Resolve the connection** by `(provider, workspaceName)` *(browser only today)*. Unknown →
+ignored (`"Unknown connection"`). `status !== "connected"` → ignored
 (`` `${ProviderLabel} workspace is disconnected` ``). Shape:
 
 ```ts
@@ -1334,7 +1430,8 @@ interface IntegrationConnection {          // store.ts:43
 }
 ```
 
-**2 — Resolve the channel** within the connection. Unknown → ignored
+**2 — Resolve the channel** within the connection *(browser only today; the server treats
+`channel` as an opaque id-or-name and matches rules against it directly)*. Unknown → ignored
 (`` `Unknown channel for ${workspaceName}` ``).
 
 **3 — Resolve the routing rule.** **A rule for the exact channel wins over the `"*"` catch-all**
@@ -1388,22 +1485,24 @@ transaction, exactly the §3.2 shape. From `route.ts:63-69` and `store.ts:553-58
 
 | Field | Value |
 |---|---|
-| `identifier` / `number` | Allocated from the team's `issueCounter` (server-side; the client mock uses `max(number)+1`). |
+| `identifier` / `number` | `max(highest existing number + 1, team.issueCounter)`; `Team.issueCounter` is bumped in the same batch. (The browser pipeline, which has no allocator, uses `max(number)+1`.) |
 | `stateId` | The team's first **backlog**-category state, falling back to the first state (`states.find(s => s.category === "backlog") ?? states[0]`). No states → ignored (`` `${team.name} has no workflow states` ``). |
 | `sortOrder` | Above the state's current top row: `first.sortOrder - 1`, or `1000` if the state is empty. |
 | `priority` | `task.priority ?? clamp(rule.defaultPriority) ?? 0`. |
 | `assigneeId` | The acting user when `assignSelf`, else absent. |
-| `creatorId` | **The integration's bot/service user.** (The client mock uses `CURRENT_USER_ID`.) |
+| `creatorId` | **The integration's bot/service user.** The server uses the `MCP_ACTOR` member, falling back to the workspace's first member (§11.3); the browser pipeline uses `CURRENT_USER_ID`. |
 | `labelIds` | `rule.defaultLabelIds ?? []`. |
 | `subscriberIds` | `[creatorId]` in the reference impl. |
 | `teamId` | `rule.teamId`. Missing team → ignored (`"Routed team no longer exists"`). |
 | `createdAt` / `updatedAt` | now. |
 
-> *"Applying it through the sync engine is what fans the new issue out to every connected client
-> as a delta — no side channel."* (`route.ts:67-69`)
+The write goes through `ServerSyncStore.applyMutation` as a `create` `Issue` transaction plus an
+`Activity{type:"created"}` row — applying it through the sync engine is what fans the new issue out
+to every connected client as a delta. No side channel.
 
 **7 — Append an `InboundMessage`** to the connection's activity log so Settings → Integrations can
-render it. Every message is logged, matching or not — *"the activity log is the debugging surface
+render it *(browser only today — the server has no log to append to; its outcome is the response
+body instead)*. Every message is logged, matching or not — *"the activity log is the debugging surface
 for 'why didn't my message become an issue?'"*.
 
 ```ts
@@ -1424,21 +1523,28 @@ Cap: `INBOUND_LOG_LIMIT = 100`, newest first, oldest fall off.
 
 ### 7.5 Idempotency
 
-**Not implemented today** — the mock has no dedupe at all. Slack and Teams both retry on
-non-2xx and on timeouts, so a real receiver must:
+**Implemented.** Slack and Teams both retry on non-2xx and on timeouts, so the receiver remembers
+every `messageId` it has processed in a capped in-memory map (1000 entries, oldest evicted first,
+anchored on `globalThis` so it survives dev HMR). A repeat answers `202` with
+`{ "duplicate": true }` and the original `identifier`, without re-running the pipeline. Messages
+sent **without** a `messageId` are not de-duplicated — there is nothing to key on.
 
-- Dedupe on the provider's event id (Slack `event_id`, Teams activity `id`) with a short TTL, and
-  answer `202` for a duplicate without re-running the pipeline.
+In-memory means **per process**. A real deployment replaces the map with a shared store and a TTL,
+and should additionally:
+
 - Answer within the provider's timeout (Slack: 3 s) — acknowledge first, process async.
-- Use a deterministic `TransactionData.id` derived from the provider event id, so that even a
+- Derive `TransactionData.id` deterministically from the provider event id, so that even a
   duplicated pipeline run collapses to one issue at the sync layer.
 
 ### 7.6 Moving the state server-side
 
-If you implement the receiver, the connection list, routing rules and activity log must move from
-`localStorage` to your database, and Settings → Integrations must read them from an API instead of
+The receiver exists; what is still split is the **state it reads**. The connection list and the
+activity log live in `localStorage`, and the routing rules exist twice — in `localStorage` for the
+settings page, in `INTEGRATIONS_RULES` for the server. To finish the job, move all three into your
+database and have Settings → Integrations read them from an API instead of
 `src/lib/integrations/store.ts`. Alternatively, model them as new sync models (§9.3) so they ride
-the existing bootstrap/delta machinery for free.
+the existing bootstrap/delta machinery for free — at which point `INTEGRATIONS_RULES` retires and
+the rules the page edits are the rules the receiver enforces.
 
 ---
 
@@ -1694,6 +1800,208 @@ persistence.
 
 ---
 
+## 11. MCP server
+
+Source: `src/app/api/mcp/route.ts` (transport) and `src/server/mcp/tools.ts` (tools), with the
+tool catalogue's names/titles/descriptions in `src/lib/mcp/catalogue.ts` — a pure-data module the
+settings page imports too, so the page and the model are told the same thing.
+
+### 11.1 What it is, and what it can actually see
+
+`POST /api/mcp` is a real [Model Context Protocol](https://modelcontextprotocol.io) server over the
+**Streamable HTTP** transport. It is built on the official TypeScript SDK
+(`@modelcontextprotocol/sdk`), using that SDK's Web-Standards transport
+(`WebStandardStreamableHTTPServerTransport`), which takes a `Request` and returns a `Response` —
+exactly the signature a Next App Router route handler has. It runs **stateless**: one `McpServer` +
+transport per request, no session ids, so it behaves the same on a long-lived node and on
+serverless.
+
+> **Read this before you demo it.** This app is local-first. A normal user's workspace lives in
+> **that browser's IndexedDB** (`LocalTransport`, the default), and **no server route can reach
+> it** — not this one, not any other. The MCP server therefore reads and writes `ServerSyncStore`
+> (`src/server/syncStore.ts`): the in-memory server-side store that is this repo's reference
+> implementation of the contract in §3–§5.
+>
+> | You are running… | What MCP operates on |
+> |---|---|
+> | `NEXT_PUBLIC_SYNC_TRANSPORT=http` (dev mock) | **The same store the app reads.** End to end real: `create_issue` writes through `applyMutation`, which allocates a syncId and broadcasts the row down `GET /api/sync/events`, so open tabs show the new issue within milliseconds. |
+> | the default local transport | The **server's** copy of the workspace, not your tab. MCP works; it just is not looking at your browser. |
+> | a real backend (`NEXT_PUBLIC_API_BASE_URL`) | Re-point this layer at your database and every tool is correct as written — the tools only ever speak the mutation contract of §3.2. |
+
+The chat webhook (§7) creates its issues by calling the same tool layer, so "how an issue gets
+made" has exactly one implementation.
+
+### 11.2 Endpoint and transport
+
+| | |
+|---|---|
+| Endpoint | `POST {origin}/api/mcp` |
+| Content type | request `application/json`, response `application/json` |
+| Protocol | JSON-RPC 2.0, MCP protocol version `2025-06-18` (negotiated in `initialize`) |
+| `GET /api/mcp` | `405` + `Allow: POST` — this server offers no standalone server→client SSE stream (the app already has `GET /api/sync/events` for live deltas) |
+| `DELETE /api/mcp` | `405` — stateless, so there is no session to end |
+| Runtime | `nodejs`, `dynamic = "force-dynamic"` |
+
+The SDK's transport normally insists on `Accept: application/json, text/event-stream`. The route
+rewrites that header before handing the request over, so a plain `curl -H 'Content-Type:
+application/json'` works.
+
+**Methods implemented:** `initialize`, `ping`, `tools/list`, `tools/call` (plus the SDK's
+`notifications/*` handling). Anything else answers `-32601`.
+
+### 11.3 Auth and the production gate
+
+Two independent gates:
+
+1. **The same dev-mock gate as `src/app/api/sync/*`** (§1.1): in `NODE_ENV=production` the route
+   answers `404` unless `ALLOW_SYNC_MOCK=1` is set deliberately.
+2. **`MCP_TOKEN`** — when set, every request must carry `Authorization: Bearer <MCP_TOKEN>`.
+   Comparison is length-checked then constant-time. A missing or wrong token answers `401` with
+   `WWW-Authenticate: Bearer realm="mcp"` and a JSON-RPC error body.
+
+> **A real deployment MUST set `MCP_TOKEN`.** Unset, the endpoint is open, and these tools create
+> and modify workspace data. Unset is for localhost only.
+
+`MCP_ACTOR` (optional) names the workspace member writes are attributed to — by name, email or id.
+Unset, the workspace's first member is used. This exists because `MutationRequest` carries no
+authenticated actor (§6.6); a real deployment authenticates the MCP client and uses *its* identity
+instead.
+
+```bash
+# .env.local
+MCP_TOKEN=a-long-random-string
+MCP_ACTOR=yatharth.kaushal@synquic.in   # optional
+```
+
+### 11.4 Connecting Claude Desktop or Cursor
+
+Both take the same block. Settings → Integrations → **MCP server** renders it pre-filled with this
+deployment's origin and a copy button.
+
+```json
+{
+  "mcpServers": {
+    "synquic": {
+      "url": "https://your-host/api/mcp",
+      "headers": { "Authorization": "Bearer <MCP_TOKEN>" }
+    }
+  }
+}
+```
+
+- **Claude Desktop** — Settings → Developer → Edit Config (`claude_desktop_config.json`), paste,
+  restart the app.
+- **Cursor** — Settings → MCP → Add new MCP server, or edit `~/.cursor/mcp.json`
+  (`.cursor/mcp.json` for a single project), paste, reload.
+- Drop the `headers` block entirely when `MCP_TOKEN` is unset.
+- A client that only speaks stdio needs a bridge: `npx mcp-remote https://your-host/api/mcp
+  --header "Authorization: Bearer <MCP_TOKEN>"`.
+
+### 11.5 Tool catalogue
+
+Nine tools. Every input is validated with zod, and names resolve leniently: a **team** by key,
+name, id or prefix; a **workflow state** by name, category or id; a **member** by name, email,
+display name, initials or substring; a **project** by name, slug or id; a **priority** by number
+`0–4` or word (`urgent|critical|p0`→1, `high|p1`→2, `medium|normal|p2`→3, `low|p3`→4,
+`none|no`→0). An unresolvable name comes back as an `isError` result **listing the valid options**,
+never as a guess.
+
+Results are human-readable text (`content: [{ type: "text", text }]`), not JSON dumps.
+
+| Tool | Writes | Input (`*` = required) |
+|---|---|---|
+| `list_teams` | | *(no arguments)* |
+| `list_projects` | | `team`, `status` (`backlog\|planned\|started\|completed\|canceled`), `limit` |
+| `list_issues` | | `team`, `state` (state name **or** category), `assignee`, `project`, `limit` |
+| `get_issue` | | `identifier`* |
+| `search_issues` | | `query`*, `team`, `limit` |
+| `create_issue` | ✔ | `team`*, `title`*, `description`, `priority`, `assignee`, `project`, `labels[]`, `state` |
+| `update_issue` | ✔ | `identifier`*, `state`, `priority`, `assignee`, `title`, `description`, `project` |
+| `add_comment` | ✔ | `identifier`*, `body`*, `author` |
+| `create_project` | ✔ | `name`*, `teams[]`, `summary`, `description`, `lead`, `priority`, `status`, `targetDate` |
+
+`limit` is an integer 1–200, default 50.
+
+**Write semantics** — all four writing tools go through `ServerSyncStore.applyMutation`, i.e. real
+`TransactionData` batches in the §3.2 shape, which is what makes them fan out over the delta
+stream:
+
+- `create_issue` allocates `number = max(highest existing number + 1, team.issueCounter)`, bumps
+  `Team.issueCounter` in the same batch, sets `identifier = "{TEAM_KEY}-{number}"`, lands the issue
+  at the **top of its state** (`first.sortOrder - 1`, or `1000` when the state is empty), defaults
+  the state to the team's first `backlog`-category state, and writes an `Activity{type:"created"}`
+  row alongside.
+- `update_issue` only touches fields you pass, skips no-ops, writes the matching `Activity` rows
+  (`stateChanged` / `priorityChanged` / `assigneeChanged` / `projectChanged`) and bumps
+  `updatedAt`. `assignee: "none"` unassigns and `project: "none"` detaches — sent as wire `null`,
+  which is how a field is cleared (§5.4).
+- `add_comment` writes `Comment` + `Activity{type:"commented"}` and bumps the issue's `updatedAt`
+  — the same three writes the in-app composer makes.
+- `create_project` mints the `name-slug-<12hex>` slug the app's routes expect, so the returned slug
+  resolves at `/{workspace}/project/{slug}/overview`.
+
+### 11.6 Worked example
+
+```bash
+BASE=http://localhost:3001/api/mcp     # add -H "Authorization: Bearer $MCP_TOKEN" when set
+```
+
+**initialize**
+
+```console
+$ curl -s -X POST $BASE -H 'Content-Type: application/json' -d '{
+    "jsonrpc":"2.0","id":1,"method":"initialize",
+    "params":{"protocolVersion":"2025-06-18","capabilities":{},
+              "clientInfo":{"name":"curl","version":"1.0"}}}'
+
+{"result":{"protocolVersion":"2025-06-18",
+           "capabilities":{"tools":{"listChanged":true}},
+           "serverInfo":{"name":"synquic","version":"1.0.0"},
+           "instructions":"Tools for a product-development workspace: …"},
+ "jsonrpc":"2.0","id":1}
+```
+
+**tools/call → create_issue**
+
+```console
+$ curl -s -X POST $BASE -H 'Content-Type: application/json' -d '{
+    "jsonrpc":"2.0","id":11,"method":"tools/call",
+    "params":{"name":"create_issue","arguments":{
+      "team":"TRENDZO","title":"MCP smoke test issue",
+      "priority":"high","assignee":"yatharth.kaushal@synquic.in","state":"backlog"}}}'
+
+{"result":{"content":[{"type":"text",
+  "text":"Created TRENDZO-40 — MCP smoke test issue\nState Backlog · High · assigned to yatharth.kaushal"}],
+  "isError":false},"jsonrpc":"2.0","id":11}
+```
+
+**tools/call → update_issue**
+
+```console
+{"result":{"content":[{"type":"text",
+  "text":"Updated TRENDZO-40 — MCP smoke test issue\n- state Backlog → In Progress\n- priority High → Urgent\n- title updated"}],
+  "isError":false},"jsonrpc":"2.0","id":13}
+```
+
+That row is now in `GET /api/sync/bootstrap` and arrived at every connected client as a
+`SyncAction` on `GET /api/sync/events`.
+
+### 11.7 Errors
+
+Two layers, deliberately distinct:
+
+| Situation | Answer |
+|---|---|
+| Body is not JSON | `400` + `{"jsonrpc":"2.0","id":null,"error":{"code":-32700,…}}` |
+| Body is JSON but not a JSON-RPC request (`jsonrpc` missing, `method` missing, a *response* posted to the endpoint, empty batch) | `400` + `-32600 Invalid Request: <reason>` |
+| Unknown method | `200` + `-32601 Method not found` |
+| Unknown tool, or arguments that fail the tool's schema | `200` + a tool **result** with `isError: true` and the validation detail (`-32602` text) — a failed tool call is a result the model can read and retry, not a transport error |
+| A name the tool cannot resolve ("no team matches …") | `200` + `isError: true` with the message and the valid options |
+| Anything thrown inside the transport | `500` + `-32603 Internal error: <detail>` |
+| `MCP_TOKEN` set and the header missing/wrong | `401` + `-32001` |
+
+---
+
 ## Appendix A — file map
 
 | Path | What it is |
@@ -1712,15 +2020,20 @@ persistence.
 | `src/app/api/sync/bootstrap/route.ts` | Dev-only NDJSON bootstrap endpoint. |
 | `src/app/api/sync/mutation/route.ts` | Dev-only mutation endpoint (zod validation). |
 | `src/app/api/sync/events/route.ts` | Dev-only SSE delta endpoint. |
-| `src/app/api/integrations/inbound/route.ts` | Dev-only webhook receiver; its header comment is the §7 contract. |
-| `src/lib/integrations/store.ts` | Reference ingest pipeline (`ingest`, `extractTask`). |
+| `src/app/api/integrations/inbound/route.ts` | The webhook receiver: signature check, routing, extraction, issue creation (§7). |
+| `src/lib/integrations/shared.ts` | The rule shape, trigger vocabulary and `extractTask` — imported by BOTH the browser store and the receiver. |
+| `src/server/integrations/rules.ts` | The server's rules source (`INTEGRATIONS_RULES`) and rule matching. |
+| `src/lib/integrations/store.ts` | The in-browser pipeline (`ingest`) the settings-page simulator drives. |
+| `src/app/api/mcp/route.ts` | MCP server over Streamable HTTP; gate, bearer auth, JSON-RPC envelope checks (§11). |
+| `src/server/mcp/tools.ts` | The MCP tool implementations + `createIssueFromChat`, shared with the webhook. |
+| `src/lib/mcp/catalogue.ts` | Tool names/titles/descriptions as data — read by the server AND the settings page. |
 | `src/lib/auth/session.ts` | Session seam + the six documented auth endpoints. |
 | `src/lib/auth/profile.ts` | Initials derivation + avatar downscaling. No storage since `SCHEMA_VERSION` 7. |
 | `src/app/(app)/login/LoginView.tsx` | The four login methods; six `TODO(auth-backend)` markers. |
 | `src/lib/issues/viewPrefs.ts:21` | `CURRENT_USER_ID = "u-yk"` — the hard-coded identity. |
 | `src/app/(app)/dev/data/DataInspector.tsx` | Live engine inspector at `/dev/data`. |
 | `scripts/verify-sync.mjs` | Two-context puppeteer sync gate. |
-| `.env.example` | The two environment variables, documented. |
+| `.env.example` | Every environment variable, documented. |
 
 ## Appendix B — the whole contract in TypeScript
 
@@ -1810,7 +2123,7 @@ document disagree, this document (and the code it cites) wins.** If someone hand
 | L469, L582: `owner > admin > member > guest`, *"server-side enforcement on every mutation"* | `WorkspaceRole = "admin" \| "member" \| "guest"` — **no `owner`**. Zero enforcement; `MutationRequest` has no principal at all (§6.6). | You must design the auth envelope; no doc anticipated it. |
 | L56, §17.1: **Auth.js / NextAuth v5** + `@simplewebauthn/*` | Neither is installed. `session.ts` is a `localStorage` wrapper. | The seven real endpoint shapes are in `src/lib/auth/session.ts:9-16` and in §6 — they appear in **no** planning doc. |
 | L43, L334, L485, L554: **Yjs + y-prosemirror** everywhere, collab server, presence, `descriptionYDoc`/`bodyYDoc` | Tiptap starter-kit only; no `yjs`, no `y-prosemirror`, no provider. `description` is a markdown string. | Serve markdown strings. See §9.4. |
-| L54: *"REST for auth/webhooks"* — the only webhook mention; no shape given | `src/app/api/integrations/inbound/route.ts` carries a complete contract in its header, reproduced in §7. | The **code is ahead of the doc** here; use §7. |
+| L54: *"REST for auth/webhooks"* — the only webhook mention; no shape given | `src/app/api/integrations/inbound/route.ts` implements the receiver; §7 is its contract. | The **code is ahead of the doc** here; use §7. |
 | L55, L57: Postgres + Drizzle, Redis event bus, Anthropic API behind a server action layer, BullMQ/pg-boss for Loop schedules | None exist. `src/server/syncStore.ts` is one in-process in-memory map. The agent is rule-based (`LocalAgentAdapter`), and **Loops have a builder and run history but nothing that fires a schedule**. | The Loops scheduler is a genuine backend requirement that no client code covers. |
 | L59, L544, L583: Vitest / Playwright, *"sync engine unit-tested"* | No test runner installed. Verification is ad-hoc `scripts/*.mjs` (puppeteer-core). | Do not expect a conformance suite to exist. `scripts/verify-sync.mjs` is the closest thing (§10). |
 | L12, L36: *"the architecture in §20"* / *"per §20"* | §20 is RICH TEXT; the sync architecture is **§19**. Stale cross-references. | Read §19. |
