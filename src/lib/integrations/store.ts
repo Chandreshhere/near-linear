@@ -25,63 +25,52 @@
 import { makeObservable, observable, runInAction } from "mobx";
 import { useEffect, useState } from "react";
 import type { SyncClient } from "@/lib/data/SyncClient";
-import type { IssueData, Priority, UUID } from "@/lib/data/types";
+import type { IssueData, UUID } from "@/lib/data/types";
 import { CURRENT_USER_ID } from "@/lib/issues/viewPrefs";
 import { showToast } from "@/lib/toast";
+import {
+  clampPriority,
+  describeTask,
+  extractTask,
+  INBOUND_LOG_LIMIT,
+  pickRule,
+  provenanceFooter,
+  PROVIDER_LABELS,
+  triggerRejection,
+  type InboundMessage,
+  type InboundOutcome,
+  type IntegrationChannel,
+  type IntegrationConnection,
+  type IntegrationProvider,
+  type RoutingRule,
+} from "./shared";
 
 /* ================================================================
  * Shapes (this is the localStorage row shape too)
  * ================================================================ */
 
-export type IntegrationProvider = "slack" | "msteams";
-
-export interface IntegrationChannel {
-  id: string;
-  name: string;
-}
-
-export interface IntegrationConnection {
-  id: string;
-  provider: IntegrationProvider;
-  /** Provider-side workspace/tenant name entered in the OAuth dialog. */
-  workspaceName: string;
-  connectedAt: string;
-  status: "connected" | "disconnected";
-  channels: IntegrationChannel[];
-}
-
 /**
- * Trigger vocabulary:
- *   mention — only messages mentioning the bot ("@linear", case-insensitive)
- *   command — only messages starting with "/task"
- *   all     — every message in the channel
+ * The rule SHAPE, the trigger vocabulary and the message→task extraction live
+ * in `./shared` so the webhook receiver (a server route, which cannot import
+ * a "use client" module) runs the exact same code. They are re-exported here
+ * so every existing importer of this module is unaffected.
  */
-export type TriggerMode = "mention" | "command" | "all";
-
-export interface RoutingRule {
-  id: string;
-  connectionId: string;
-  /** A concrete channel id, or "*" = any channel of the connection. */
-  channelId: string | "*";
-  teamId: string;
-  defaultPriority?: number;
-  defaultLabelIds?: string[];
-  triggerMode: TriggerMode;
-}
-
-export type InboundOutcome =
-  | { kind: "created"; issueId: string; identifier: string }
-  | { kind: "ignored"; reason: string };
-
-export interface InboundMessage {
-  id: string;
-  connectionId: string;
-  channelId: string;
-  author: string;
-  text: string;
-  receivedAt: string;
-  outcome: InboundOutcome;
-}
+export type {
+  ExtractedTask,
+  InboundMessage,
+  InboundOutcome,
+  IntegrationChannel,
+  IntegrationConnection,
+  IntegrationProvider,
+  RoutingRule,
+  TriggerMode,
+} from "./shared";
+export {
+  extractTask,
+  INBOUND_LOG_LIMIT,
+  PROVIDER_LABELS,
+  TITLE_MAX_LENGTH,
+} from "./shared";
 
 /**
  * The payload `ingest()` accepts — the same fields the webhook receiver
@@ -96,13 +85,6 @@ export interface IngestInput {
 }
 
 export const INTEGRATIONS_STORAGE_KEY = "integrations";
-/** Activity log cap — oldest entries fall off. */
-export const INBOUND_LOG_LIMIT = 100;
-
-export const PROVIDER_LABELS: Record<IntegrationProvider, string> = {
-  slack: "Slack",
-  msteams: "Microsoft Teams",
-};
 
 /** Simulated OAuth seeds these channels per provider (plausible defaults). */
 const SEED_CHANNELS: Record<IntegrationProvider, IntegrationChannel[]> = {
@@ -126,112 +108,6 @@ function newId(prefix: string): string {
       ? c.randomUUID()
       : `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 10)}`;
   return `${prefix}-${id}`;
-}
-
-/* ================================================================
- * Message → task extraction (mirrors LocalAgentAdapter's parsing —
- * src/lib/agent/engine.ts — trimmed to the inbound-message dialect)
- * ================================================================ */
-
-const PRIORITY_WORDS: Record<string, Priority> = {
-  urgent: 1,
-  critical: 1,
-  p0: 1,
-  high: 2,
-  p1: 2,
-  medium: 3,
-  normal: 3,
-  p2: 3,
-  low: 4,
-  p3: 4,
-  none: 0,
-  no: 0,
-};
-
-/** "high priority" / "priority: high" / "priority is urgent" forms. */
-const PRIORITY_BEFORE_RE =
-  /\b(urgent|critical|high|medium|normal|low|no|none|p0|p1|p2|p3)\s+priority\b[.,;:]?/i;
-const PRIORITY_AFTER_RE =
-  /\bpriority\s*(?:is|to|=|:)?\s*(urgent|critical|high|medium|normal|low|none|no|p0|p1|p2|p3)\b[.,;:]?/i;
-
-/** "assign me" / "assign it to me" / "assigned to me" / "to myself". */
-const ASSIGN_ME_RE =
-  /\b(?:assign(?:ed)?\s+(?:it\s+|this\s+)?(?:to\s+)?me|to\s+myself)\b[.,;:]?/i;
-
-const MENTION_RE = /@linear\b/i;
-const COMMAND_RE = /^\/task\b/i;
-
-export const TITLE_MAX_LENGTH = 140;
-
-export interface ExtractedTask {
-  title: string;
-  /** Message remainder after the title (no footer). Empty string = none. */
-  body: string;
-  priority?: Priority;
-  assignSelf: boolean;
-}
-
-function clampPriority(value: number | undefined): Priority | undefined {
-  if (value === undefined) return undefined;
-  const rounded = Math.round(value);
-  return rounded === 0 || rounded === 1 || rounded === 2 || rounded === 3 || rounded === 4
-    ? (rounded as Priority)
-    : undefined;
-}
-
-/**
- * Turn a raw chat message into a task. `triggerMode` decides which trigger
- * token to strip; property hints ("priority high", "assign me") are consumed
- * so they never pollute the title. First sentence/line becomes the title
- * (hard cap TITLE_MAX_LENGTH — the overflow stays in the body); everything
- * after becomes the description body.
- */
-export function extractTask(rawText: string, triggerMode: TriggerMode): ExtractedTask | undefined {
-  let text = rawText.trim();
-
-  // 1) strip the trigger token
-  if (triggerMode === "command") text = text.replace(/^\/task\b[:,]?\s*/i, "");
-  text = text.replace(/@linear\b[:,]?\s*/gi, " ");
-
-  // 2) consume property hints
-  let priority: Priority | undefined;
-  const priorityMatch = PRIORITY_BEFORE_RE.exec(text) ?? PRIORITY_AFTER_RE.exec(text);
-  if (priorityMatch !== null) {
-    priority = PRIORITY_WORDS[priorityMatch[1].toLowerCase()];
-    text = text.replace(priorityMatch[0], " ");
-  }
-  const assignMatch = ASSIGN_ME_RE.exec(text);
-  const assignSelf = assignMatch !== null;
-  if (assignMatch !== null) text = text.replace(assignMatch[0], " ");
-
-  // 3) first sentence/line = title, remainder = body
-  const compact = text.replace(/[ \t]+/g, " ").trim();
-  if (compact === "") return undefined;
-
-  const newlineIdx = compact.indexOf("\n");
-  const firstLine = (newlineIdx === -1 ? compact : compact.slice(0, newlineIdx)).trim();
-  const afterLine = newlineIdx === -1 ? "" : compact.slice(newlineIdx + 1).trim();
-
-  // First sentence of the first line wins ("Fix login. Users report…"); a
-  // bare period inside a token ("v1.2") never splits — whitespace required.
-  const sentence = /^(.*?[.!?])\s+(\S[\s\S]*)$/.exec(firstLine);
-  let title = (sentence !== null ? sentence[1] : firstLine).trim();
-  const lineRest = sentence !== null ? sentence[2].trim() : "";
-  let body = [lineRest, afterLine].filter((part) => part !== "").join("\n");
-
-  if (title.length > TITLE_MAX_LENGTH) {
-    // Hard cap: the overflow moves into the body so nothing is lost.
-    const overflow = title.slice(TITLE_MAX_LENGTH).trim();
-    title = title.slice(0, TITLE_MAX_LENGTH).trim();
-    body = [overflow === "" ? "" : `…${overflow}`, body]
-      .filter((part) => part !== "")
-      .join("\n");
-  }
-  // Drop trailing punctuation from the title (engine.ts cleanPhrase idiom).
-  title = title.replace(/[.,;:!?]+$/g, "").trim();
-  if (title === "") return undefined;
-
-  return { title, body, priority, assignSelf };
 }
 
 /* ================================================================
@@ -515,21 +391,16 @@ export class IntegrationsStore {
     }
 
     // 3) routing rule — exact channel beats the "*" catch-all
-    const candidates = this.rulesFor(connection.id);
-    const rule =
-      candidates.find((r) => r.channelId === channel.id) ??
-      candidates.find((r) => r.channelId === "*");
+    const rule = pickRule(this.rulesFor(connection.id), channel.id);
     if (rule === undefined) {
       return finish({ kind: "ignored", reason: `No routing rule for #${channel.name}` });
     }
 
     // 4) trigger mode
     const text = input.text.trim();
-    if (rule.triggerMode === "mention" && !MENTION_RE.test(text)) {
-      return finish({ kind: "ignored", reason: "No @linear mention (rule requires mentions)" });
-    }
-    if (rule.triggerMode === "command" && !COMMAND_RE.test(text)) {
-      return finish({ kind: "ignored", reason: "Not a /task command (rule requires /task)" });
+    const rejection = triggerRejection(rule.triggerMode, text);
+    if (rejection !== undefined) {
+      return finish({ kind: "ignored", reason: rejection });
     }
 
     // 5) extraction
@@ -559,8 +430,10 @@ export class IntegrationsStore {
     const sortOrder = inState.length > 0 ? inState[0].sortOrder - 1 : 1000;
     const now = new Date().toISOString();
 
-    const footer = `Created from ${PROVIDER_LABELS[connection.provider]} · #${channel.name} · ${author}`;
-    const description = task.body === "" ? footer : `${task.body}\n\n${footer}`;
+    const description = describeTask(
+      task.body,
+      provenanceFooter(connection.provider, channel.name, author),
+    );
 
     const row: IssueData = {
       id: newId("issue") as UUID,

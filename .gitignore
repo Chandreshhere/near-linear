@@ -46,3 +46,7 @@ next-env.d.ts
 # not ours to redistribute. The distilled findings live in docs/analysis/.
 /docs/*.zip
 /docs/*.mov
+branch_structure.json
+temp_auto_push.bat
+temp_interactive_push.bat
+.gitignore

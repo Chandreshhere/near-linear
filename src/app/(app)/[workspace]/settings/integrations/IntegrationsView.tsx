@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, type FormEvent } from "react";
+import { useEffect, useState, type FormEvent, type ReactNode } from "react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import { observer } from "mobx-react-lite";
@@ -9,8 +9,11 @@ import { Dialog } from "@/components/ui/Dialog";
 import { Input } from "@/components/ui/Input";
 import { Select, type SelectOption } from "@/components/ui/Select";
 import {
+  SettingsCard,
+  SettingsCustomRow,
   SettingsEmptyRow,
   SettingsPageHeader,
+  SettingsRow,
   SettingsSection,
   SettingsSections,
 } from "@/components/settings/SettingsPage";
@@ -27,7 +30,12 @@ import {
 } from "@/lib/integrations/store";
 import type { SyncStore } from "@/lib/data/store";
 import type { TeamData } from "@/lib/data/types";
-import { showToast } from "@/lib/toast";
+import { copyToClipboard, showToast } from "@/lib/toast";
+import {
+  MCP_ENDPOINT_PATH,
+  MCP_SERVER_NAME,
+  TOOL_DOCS,
+} from "@/lib/mcp/catalogue";
 import settings from "@/components/settings/settings.module.css";
 import s from "./integrations.module.css";
 
@@ -670,6 +678,243 @@ const ActivityLog = observer(function ActivityLog({
 });
 
 /* ================================================================
+ * MCP server + webhook reference
+ * ================================================================ */
+
+/** The deployment's own origin, read after mount so SSR stays deterministic. */
+function useOrigin(): string {
+  const [origin, setOrigin] = useState("");
+  useEffect(() => {
+    setOrigin(window.location.origin);
+  }, []);
+  return origin;
+}
+
+function CopyButton({ value, message }: { value: string; message: string }) {
+  return (
+    <Button
+      variant="secondary"
+      size={24}
+      disabled={value === ""}
+      onClick={() => {
+        void copyToClipboard(value, message);
+      }}
+    >
+      Copy
+    </Button>
+  );
+}
+
+/** A labelled, copyable code block. */
+function ReferenceBlock({
+  label,
+  note,
+  value,
+  copyMessage,
+}: {
+  label: string;
+  note?: ReactNode;
+  value: string;
+  copyMessage: string;
+}) {
+  return (
+    <SettingsCustomRow>
+      <div className={s.refRow}>
+        <div className={s.refHead}>
+          <span className={s.refLabel}>{label}</span>
+          <CopyButton value={value} message={copyMessage} />
+        </div>
+        <pre className={s.code}>{value === "" ? "…" : value}</pre>
+        {note !== undefined ? <span className={s.refNote}>{note}</span> : null}
+      </div>
+    </SettingsCustomRow>
+  );
+}
+
+/**
+ * Settings -> Integrations -> MCP server.
+ *
+ * The endpoint is real: `src/app/api/mcp/route.ts` speaks MCP over Streamable
+ * HTTP using the official SDK. What it operates on is stated plainly below
+ * rather than glossed - it serves the SERVER-side store, which is what the
+ * app itself reads only when it runs with the http transport.
+ */
+function McpSection() {
+  const origin = useOrigin();
+  const endpoint = origin === "" ? "" : `${origin}${MCP_ENDPOINT_PATH}`;
+  const clientConfig =
+    endpoint === ""
+      ? ""
+      : JSON.stringify(
+          {
+            mcpServers: {
+              [MCP_SERVER_NAME]: {
+                url: endpoint,
+                headers: { Authorization: "Bearer <MCP_TOKEN>" },
+              },
+            },
+          },
+          null,
+          2,
+        );
+
+  return (
+    <SettingsSection
+      id="mcp"
+      title="MCP server"
+      description="Let an AI client read and change this workspace over the Model Context Protocol."
+    >
+      <SettingsCard>
+        <ReferenceBlock
+          label="Endpoint (Streamable HTTP)"
+          value={endpoint}
+          copyMessage="Copied the MCP endpoint"
+          note="POST JSON-RPC 2.0 here. Responses come back as application/json; there is no GET event stream."
+        />
+        <ReferenceBlock
+          label="Client configuration — Claude Desktop / Cursor"
+          value={clientConfig}
+          copyMessage="Copied the MCP client configuration"
+          note={
+            <>
+              Paste into <span className={s.codeInline}>claude_desktop_config.json</span> or
+              Cursor&rsquo;s <span className={s.codeInline}>mcp.json</span>. Drop the{" "}
+              <span className={s.codeInline}>headers</span> block when{" "}
+              <span className={s.codeInline}>MCP_TOKEN</span> is unset; otherwise replace{" "}
+              <span className={s.codeInline}>&lt;MCP_TOKEN&gt;</span> with its value.
+            </>
+          }
+        />
+        <SettingsRow
+          label="Authentication"
+          description={
+            <>
+              Set <span className={s.codeInline}>MCP_TOKEN</span> and every request must carry{" "}
+              <span className={s.codeInline}>Authorization: Bearer &lt;token&gt;</span>. Unset, the
+              endpoint is open — fine on localhost, never on a deployment: these tools create and
+              change work.
+            </>
+          }
+        />
+        <SettingsRow
+          label="What it reads and writes"
+          description={
+            <>
+              The server-side store (<span className={s.codeInline}>src/server/syncStore.ts</span>),
+              not this browser tab. This app is local-first: your workspace lives in this
+              browser&rsquo;s IndexedDB, which no server route can reach. Run with{" "}
+              <span className={s.codeInline}>NEXT_PUBLIC_SYNC_TRANSPORT=http</span> — or point the
+              app at a real backend — and MCP writes land in the same store the app reads, arriving
+              live over the existing delta stream.
+            </>
+          }
+        />
+      </SettingsCard>
+
+      <SettingsCard>
+        <SettingsCustomRow>
+          <div className={s.toolList}>
+            {TOOL_DOCS.map((tool) => (
+              <span key={tool.name} className={s.toolRow}>
+                <span className={s.toolName}>
+                  {tool.name}
+                  {tool.writes ? <span className={s.writeChip}>writes</span> : null}
+                </span>
+                <span className={s.toolDescription}>{tool.description}</span>
+              </span>
+            ))}
+          </div>
+        </SettingsCustomRow>
+      </SettingsCard>
+    </SettingsSection>
+  );
+}
+
+const WEBHOOK_BODY = JSON.stringify(
+  {
+    provider: "slack",
+    workspaceName: "synquic",
+    channel: "eng",
+    author: "sana",
+    text: "/task Fix retailer login priority high",
+    messageId: "Ev09ABCDEF",
+  },
+  null,
+  2,
+);
+
+const RULES_EXAMPLE = JSON.stringify(
+  [{ provider: "slack", channel: "eng", team: "TRENDZO", trigger: "command" }],
+);
+
+/**
+ * Settings -> Integrations -> Webhook. The receiver is real
+ * (`src/app/api/integrations/inbound/route.ts`): it verifies the signature,
+ * resolves a rule from INTEGRATIONS_RULES, extracts the task with the same
+ * code the simulator above runs, and creates the issue.
+ */
+function WebhookSection() {
+  const origin = useOrigin();
+  const endpoint = origin === "" ? "" : `${origin}/api/integrations/inbound`;
+
+  return (
+    <SettingsSection
+      id="webhook"
+      title="Webhook"
+      description="Where a provider adapter POSTs a normalized chat message. The receiver runs the same pipeline the simulator above does."
+    >
+      <SettingsCard>
+        <ReferenceBlock
+          label="Inbound URL"
+          value={endpoint}
+          copyMessage="Copied the webhook URL"
+          note="Answers 202 once the request is well-formed and authentic — a rule or trigger miss is a pipeline outcome, not a transport error."
+        />
+        <ReferenceBlock
+          label="Request body"
+          value={WEBHOOK_BODY}
+          copyMessage="Copied the example webhook body"
+          note={
+            <>
+              <span className={s.codeInline}>messageId</span> is optional and makes provider retries
+              safe: a repeat answers <span className={s.codeInline}>202</span> with{" "}
+              <span className={s.codeInline}>duplicate: true</span> instead of creating a second
+              issue. A created message answers{" "}
+              <span className={s.codeInline}>{'{ "accepted": true, "identifier": "TRENDZO-41" }'}</span>.
+            </>
+          }
+        />
+        <SettingsRow
+          label="Signing secret"
+          description={
+            <>
+              Set <span className={s.codeInline}>INTEGRATIONS_SIGNING_SECRET</span> and every request
+              must carry <span className={s.codeInline}>X-Signature: sha256=&lt;hex&gt;</span> —
+              HMAC-SHA256 over the raw body, or over{" "}
+              <span className={s.codeInline}>&lt;timestamp&gt;.&lt;rawBody&gt;</span> when{" "}
+              <span className={s.codeInline}>X-Timestamp</span> (unix seconds) is sent. Compared in
+              constant time; a timestamp more than 300s off is rejected.
+            </>
+          }
+        />
+        <SettingsRow
+          label="Routing rules"
+          description={
+            <>
+              The rules above live in this browser. The server reads its own from{" "}
+              <span className={s.codeInline}>INTEGRATIONS_RULES</span>, e.g.{" "}
+              <span className={s.codeInline}>{RULES_EXAMPLE}</span>. Unset, one built-in rule routes
+              every channel to the first team on the <span className={s.codeInline}>/task</span>{" "}
+              command.
+            </>
+          }
+        />
+      </SettingsCard>
+    </SettingsSection>
+  );
+}
+
+/* ================================================================
  * The page
  * ================================================================ */
 
@@ -727,6 +972,10 @@ export const IntegrationsView = observer(function IntegrationsView() {
             />
           </SettingsSection>
         ))}
+
+        <McpSection />
+
+        <WebhookSection />
 
         <SettingsSection
           id="activity"

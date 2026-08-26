@@ -108,6 +108,44 @@ is in **[BACKEND_API.md](BACKEND_API.md)**.
 > The `src/app/api/sync/*` routes are a **dev-only mock** of that contract.
 > They are disabled when `NODE_ENV=production`.
 
+## AI & integrations
+
+Two server routes let something outside the browser act on a workspace.
+
+**MCP server** — `POST /api/mcp` is a real [Model Context Protocol](https://modelcontextprotocol.io)
+server over Streamable HTTP, built on the official TypeScript SDK. Nine tools: `list_teams`,
+`list_projects`, `list_issues`, `get_issue`, `search_issues`, `create_issue`, `update_issue`,
+`add_comment`, `create_project`. Point Claude Desktop or Cursor at it:
+
+```json
+{
+  "mcpServers": {
+    "synquic": {
+      "url": "http://localhost:3000/api/mcp",
+      "headers": { "Authorization": "Bearer <MCP_TOKEN>" }
+    }
+  }
+}
+```
+
+**Chat webhook** — `POST /api/integrations/inbound` turns a Slack/Teams message into a real issue:
+HMAC signature check, channel→team routing, task extraction (`/task Fix login priority high assign
+me`), `202 { accepted: true, identifier: "TRENDZO-41" }`, and `messageId` de-duplication so a
+provider retry cannot create a second issue.
+
+> **What they operate on.** This app is local-first: your workspace lives in *your browser's*
+> IndexedDB, which no server route can reach. Both routes read and write the server-side store
+> (`src/server/syncStore.ts`) — so they are end-to-end real when the app runs with
+> `NEXT_PUBLIC_SYNC_TRANSPORT=http`, and become correct automatically once a real backend is wired
+> in. Under the default local transport they work against the server's copy of the workspace rather
+> than the tab you have open.
+
+Set `MCP_TOKEN` and `INTEGRATIONS_SIGNING_SECRET` on any deployment — see
+**[.env.example](.env.example)**. Full reference:
+**[BACKEND_API.md §11 (MCP)](BACKEND_API.md#11-mcp-server)** and
+**[§7 (webhook)](BACKEND_API.md#7-integrations-webhook-contract)**. Settings → Integrations shows
+the live endpoint URLs, a copy-paste client config and the tool list.
+
 ## Scripts
 
 ```bash
@@ -126,6 +164,8 @@ npx tsc --noEmit   # typecheck
 | `src/components` | UI primitives and feature surfaces |
 | `src/lib/data` | The local-first engine (store, persistence, queue, transports) + opt-in demo data |
 | `src/lib/workspace` | Workspace creation, the local workspace registry, team helpers |
+| `src/app/api` | MCP server, chat webhook, and the dev-only sync mock |
+| `src/server` | Server-side store, MCP tools, webhook routing rules |
 | `BACKEND_API.md` | Backend contract |
 | `PROGRESS.md` | Build log, decisions and known seams |
 | `docs/analysis` | Design-reference research notes |
